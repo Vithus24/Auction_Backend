@@ -1,9 +1,11 @@
 package Auction.Auction.controller;
 
+import Auction.Auction.dto.RegisterRequest;
 import Auction.Auction.entity.User;
-import Auction.Auction.service.JwtService;
-import Auction.Auction.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import Auction.Auction.security.JwtTokenProvider;
+import Auction.Auction.security.UserDetailsServiceImpl;
+import Auction.Auction.service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,16 +17,25 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class AuthController {
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private JwtService jwtService;
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final UserDetailsServiceImpl userDetailsServiceImpl;
+
+    private final JwtTokenProvider jwtTokenProvider;
+
+    private final AuthenticationManager authenticationManager;
+
+    private final AuthService authService;
+
+    public AuthController(UserDetailsServiceImpl userDetailsServiceImpl, JwtTokenProvider jwtTokenProvider, AuthenticationManager authenticationManager, AuthService authService) {
+        this.userDetailsServiceImpl = userDetailsServiceImpl;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.authenticationManager = authenticationManager;
+        this.authService = authService;
+    }
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody User user) {
-        return ResponseEntity.ok(userService.register(user));
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest registerRequest) {
+        authService.register(registerRequest);
+        return ResponseEntity.ok("User has registered successfully");
     }
 
     @PostMapping("/login")
@@ -33,7 +44,7 @@ public class AuthController {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword())
             );
-            String token = jwtService.generateToken(authentication.getName());
+            String token = jwtTokenProvider.generateToken(authentication.getName());
             return ResponseEntity.ok(new AuthResponse(token));
         } catch (AuthenticationException e) {
             return ResponseEntity.status(401).body("Authentication failed: " + e.getMessage());
