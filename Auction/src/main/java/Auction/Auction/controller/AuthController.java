@@ -1,8 +1,10 @@
 package Auction.Auction.controller;
 
+import Auction.Auction.dto.RegisterRequest;
 import Auction.Auction.entity.User;
 import Auction.Auction.security.JwtTokenProvider;
 import Auction.Auction.security.UserDetailsServiceImpl;
+import Auction.Auction.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,15 +23,19 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
 
-    public AuthController(UserDetailsServiceImpl userDetailsServiceImpl, JwtTokenProvider jwtTokenProvider, AuthenticationManager authenticationManager) {
+    private final AuthService authService;
+
+    public AuthController(UserDetailsServiceImpl userDetailsServiceImpl, JwtTokenProvider jwtTokenProvider, AuthenticationManager authenticationManager, AuthService authService) {
         this.userDetailsServiceImpl = userDetailsServiceImpl;
         this.jwtTokenProvider = jwtTokenProvider;
         this.authenticationManager = authenticationManager;
+        this.authService = authService;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@Valid @RequestBody User user) {
-        return ResponseEntity.ok(userDetailsServiceImpl.register(user));
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest registerRequest) {
+        authService.register(registerRequest);
+        return ResponseEntity.ok("User has registered successfully");
     }
 
     @PostMapping("/login")
