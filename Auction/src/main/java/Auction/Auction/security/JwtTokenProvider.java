@@ -2,6 +2,7 @@ package Auction.Auction.security;
 
 import Auction.Auction.entity.User;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -22,26 +23,28 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public String generateToken(String userName) {
+    // Assuming existing code
+    public String generateToken(User user) {  // Your entity
         return Jwts.builder()
-                .setSubject(userName)
-//                .claim("role", user.getRole().name())
+                .setSubject(user.getEmail())
+                .claim("role", user.getRole().name())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public Claims extractClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
     }
 
-    public boolean isTokenValid(String token, String username) {
-        Claims claims = extractClaims(token);
-        return claims.getSubject().equals(username) && !claims.getExpiration().before(new Date());
+    public String getEmailFromToken(String token) {
+        Claims claims = Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token).getBody();
+        return claims.getSubject();
     }
 }

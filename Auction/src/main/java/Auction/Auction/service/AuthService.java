@@ -1,23 +1,49 @@
 package Auction.Auction.service;
 
+import Auction.Auction.dto.LoginRequest;
 import Auction.Auction.dto.RegisterRequest;
+import Auction.Auction.dto.VerificationRequest;
 import Auction.Auction.entity.User;
 import Auction.Auction.exception.EmailAlreadyUsedException;
+import Auction.Auction.exception.EmailNotVerifiedException;
+import Auction.Auction.exception.UserNotFoundException;
+import Auction.Auction.exception.VerificationCodeException;
 import Auction.Auction.mapper.UserMapper;
 import Auction.Auction.repository.UserRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import Auction.Auction.security.JwtTokenProvider;
+import Auction.Auction.util.CodeGenerator;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.util.Optional;
 
 @Service
 public class AuthService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final AuthenticationManager authenticationManager;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final EmailService emailService;
 
-    public AuthService(UserRepository userRepository, UserMapper userMapper, BCryptPasswordEncoder passwordEncoder) {
+    @Value("${verification.code.expiry}")
+    private int codeExpirySeconds;
+
+    public AuthService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider, AuthenticationManager authenticationManager, RedisTemplate<String, Object> redisTemplate, EmailService emailService) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.authenticationManager = authenticationManager;
+        this.redisTemplate = redisTemplate;
+        this.emailService = emailService;
     }
 
     public void register(RegisterRequest registerRequest) {
@@ -27,5 +53,40 @@ public class AuthService {
         User user = userMapper.RegisterRequestToUser(registerRequest);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
+
+        String code = CodeGenerator.generateCode();
+        String key = "verification:" + registerRequest.email();
+        redisTemplate.opsForValue().set(key, code, Duration.ofSeconds(codeExpirySeconds));
+        emailService.sendVerificationEmail(registerRequest.email(), code);
+    }
+
+    public void verifyEmail(VerificationRequest verificationRequest) {
+        String key = "verification:" + verificationRequest.email();
+        String storedCode = (String) redisTemplate.opsForValue().get(key);
+        if (storedCode == null || !storedCode.equals(verificationRequest.code())) {
+            throw new VerificationCodeException("Invalid or expired verification code");
+        }
+        Optional<User> optionalUser = userRepository.findByEmail(verificationRequest.email());
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            user.setVerified(true);
+            userRepository.save(user);
+            redisTemplate.delete(key);
+        } else {
+            throw new UserNotFoundException("User not found");
+        }
+    }
+
+    public String login(LoginRequest request) {
+        // Check if verified (before authentication)
+        userRepository.findByEmail(request.email())
+                .filter(User::isEnabled)  // Uses isEnabled() from UserDetails
+                .orElseThrow(() -> new EmailNotVerifiedException("Email not verified"));
+
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.email(), request.password())
+        );
+        User user = (User) authentication.getPrincipal();  // Now casts to your User entity
+        return jwtTokenProvider.generateToken(user);  // Pass your User to generate JWT
     }
 }
