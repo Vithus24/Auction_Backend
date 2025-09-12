@@ -21,9 +21,7 @@ public class PlayerService {
         return playerRepository.findById(id);
     }
 
-    public Optional<Player> findByName(String name) {
-        return playerRepository.findByName(name);
-    }
+
 
     public Player save(Player player) {
         if (player.getAuction() != null && player.getAuction().getId() != null && player.getEmail() != null) {

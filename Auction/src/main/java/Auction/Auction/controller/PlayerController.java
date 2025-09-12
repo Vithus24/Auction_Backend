@@ -27,12 +27,7 @@ public class PlayerController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/name")
-    public ResponseEntity<Player> getPlayerByName(@RequestParam String name) {
-        return playerService.findByName(name)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
+
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
