@@ -22,6 +22,12 @@ public class TeamService {
     }
 
     public Team save(Team team) {
+        if (team.getAuction() != null && team.getAuction().getId() != null && team.getName() != null) {
+            Optional<Team> existingTeam = teamRepository.findByAuctionIdAndName(team.getAuction().getId(), team.getName());
+            if (existingTeam.isPresent()) {
+                throw new RuntimeException("Team with name " + team.getName() + " already exists in auction " + team.getAuction().getId());
+            }
+        }
         return teamRepository.save(team);
     }
 
@@ -32,6 +38,8 @@ public class TeamService {
             team.setName(updatedTeam.getName());
             team.setBudget(updatedTeam.getBudget());
             team.setOwner(updatedTeam.getOwner());
+            team.setOwnerMail(updatedTeam.getOwnerMail());
+            team.setAuction(updatedTeam.getAuction());
             return teamRepository.save(team);
         } else {
             throw new RuntimeException("Team not found with id: " + id);

@@ -22,6 +22,12 @@ public class PlayerService {
     }
 
     public Player save(Player player) {
+        if (player.getAuction() != null && player.getAuction().getId() != null && player.getEmail() != null) {
+            Optional<Player> existingPlayer = playerRepository.findByAuctionIdAndEmail(player.getAuction().getId(), player.getEmail());
+            if (existingPlayer.isPresent()) {
+                throw new RuntimeException("Player with email " + player.getEmail() + " already exists in auction " + player.getAuction().getId());
+            }
+        }
         return playerRepository.save(player);
     }
 
@@ -29,11 +35,16 @@ public class PlayerService {
         Optional<Player> existingPlayer = playerRepository.findById(id);
         if (existingPlayer.isPresent()) {
             Player player = existingPlayer.get();
-            player.setName(updatedPlayer.getName());
-            player.setRole(updatedPlayer.getRole());
-            player.setBasePrice(updatedPlayer.getBasePrice());
-            player.setStats(updatedPlayer.getStats());
+            player.setFirstname(updatedPlayer.getFirstname());
+            player.setLastname(updatedPlayer.getLastname());
+            player.setMobileno(updatedPlayer.getMobileno());
+            player.setEmail(updatedPlayer.getEmail());
+            player.setDob(updatedPlayer.getDob());
+            player.setTshirtSize(updatedPlayer.getTshirtSize());
+            player.setBottomSize(updatedPlayer.getBottomSize());
+            player.setTypeOfSportCategory(updatedPlayer.getTypeOfSportCategory());
             player.setSold(updatedPlayer.isSold());
+            player.setAuction(updatedPlayer.getAuction());
             return playerRepository.save(player);
         } else {
             throw new RuntimeException("Player not found with id: " + id);
