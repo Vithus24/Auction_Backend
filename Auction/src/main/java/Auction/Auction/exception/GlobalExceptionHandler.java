@@ -11,6 +11,10 @@ import java.util.Map;
 
 @RestControllerAdvice  // applies to all controllers
 public class GlobalExceptionHandler {
+    @ExceptionHandler(ClassCastException.class)
+    public ResponseEntity<String> handleClassCastException(ClassCastException ex) {
+        return new ResponseEntity<>("Invalid user cast: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
     // Handle generic exceptions
     @ExceptionHandler(Exception.class)
