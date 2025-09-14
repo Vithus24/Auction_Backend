@@ -47,13 +47,15 @@ public class AuthService {
     }
 
     public void register(RegisterRequest registerRequest) {
-        if (userRepository.existsByEmail(registerRequest.email())) {
+        Optional<User> optionalUser = userRepository.findByEmail(registerRequest.email());
+        if (optionalUser.isPresent() && optionalUser.get().isEnabled()) {
             throw new EmailAlreadyUsedException(registerRequest.email() + " This email already is used, please try with different email.");
         }
-        User user = userMapper.RegisterRequestToUser(registerRequest);
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userRepository.save(user);
-
+        if (optionalUser.isEmpty()) {
+            User user = userMapper.RegisterRequestToUser(registerRequest);
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            userRepository.save(user);
+        }
         String code = CodeGenerator.generateCode();
         String key = "verification:" + registerRequest.email();
         redisTemplate.opsForValue().set(key, code, Duration.ofSeconds(codeExpirySeconds));
