@@ -1,6 +1,7 @@
 package Auction.Auction.controller;
 
 import Auction.Auction.dto.LoginRequest;
+import Auction.Auction.dto.LoginResponse;
 import Auction.Auction.dto.RegisterRequest;
 import Auction.Auction.dto.VerificationRequest;
 import Auction.Auction.service.AuthService;
@@ -31,8 +32,8 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request) {
-        String token = authService.login(request);
-        return ResponseEntity.ok(token);
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+        LoginResponse loginResponse = authService.login(request);
+        return ResponseEntity.ok(loginResponse);
     }
 }

@@ -1,6 +1,7 @@
 package Auction.Auction.service;
 
 import Auction.Auction.dto.LoginRequest;
+import Auction.Auction.dto.LoginResponse;
 import Auction.Auction.dto.RegisterRequest;
 import Auction.Auction.dto.VerificationRequest;
 import Auction.Auction.entity.User;
@@ -79,7 +80,7 @@ public class AuthService {
         }
     }
 
-    public String login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
         // Check if verified (before authentication)
         userRepository.findByEmail(request.email())
                 .filter(User::isEnabled)  // Uses isEnabled() from UserDetails
@@ -88,7 +89,8 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
-        User user = (User) authentication.getPrincipal();  // Now casts to your User entity
-        return jwtTokenProvider.generateToken(user);  // Pass your User to generate JWT
+        User user = (User) authentication.getPrincipal();// Now casts to your User entity
+        String token = jwtTokenProvider.generateToken(user);
+        return new LoginResponse(user.getId(), user.getEmail(), user.getRole().toString(), token);  // Pass your User to generate JWT
     }
 }
