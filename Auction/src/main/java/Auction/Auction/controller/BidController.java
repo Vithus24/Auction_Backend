@@ -1,6 +1,7 @@
 package Auction.Auction.controller;
 
 import Auction.Auction.entity.Bid;
+import Auction.Auction.entity.Player;
 import Auction.Auction.service.AuctionService;
 import Auction.Auction.service.BidService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +17,6 @@ import java.util.List;
 public class BidController {
     @Autowired
     private BidService bidService;
-    @Autowired
-    private AuctionService auctionService;
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
@@ -37,7 +36,7 @@ public class BidController {
     @PreAuthorize("hasRole('TEAM_OWNER')")
     public ResponseEntity<Bid> createBid(@RequestBody Bid bid) {
         // Validate and save bid using AuctionService to reuse logic
-        Bid savedBid = auctionService.placeBid(
+        Bid savedBid = bidService.placeBid(
                 bid.getPlayer().getId(),
                 bid.getTeam().getId(),
                 bid.getBidAmount()
@@ -63,5 +62,33 @@ public class BidController {
     public ResponseEntity<Void> deleteBid(@PathVariable Long id) {
         bidService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{playerId}/bid")
+    @PreAuthorize("hasRole('TEAM_OWNER')")
+    public ResponseEntity<Bid> placeBid(@PathVariable Long playerId, @RequestParam Long teamId, @RequestParam double amount) {
+        return ResponseEntity.ok(bidService.placeBid(playerId, teamId, amount));
+    }
+
+//    @PostMapping("/{playerId}/allocate")
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public ResponseEntity<Void> allocatePlayer(@PathVariable Long playerId) {
+//        bidService.allocatePlayer(playerId);
+//        return ResponseEntity.ok().build();
+//    }
+
+    @PostMapping("/wheel-select")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Player> startWheelSelection() {
+        Player selectedPlayer = bidService.startWheelSelection();
+        if (selectedPlayer == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(selectedPlayer);
+    }
+
+    @GetMapping("/available-players")
+    public List<Player> getAvailablePlayersForWheel() {
+        return bidService.getAvailablePlayersForWheel();
     }
 }
