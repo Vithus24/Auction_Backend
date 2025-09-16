@@ -21,7 +21,9 @@ public class PlayerService {
         return playerRepository.findById(id);
     }
 
-
+    public List<Player> findByAuctionId(Long auctionId) {
+        return playerRepository.findByAuctionId(auctionId);
+    }
 
     public Player save(Player player) {
         if (player.getAuction() != null && player.getAuction().getId() != null && player.getEmail() != null) {
@@ -47,6 +49,7 @@ public class PlayerService {
             player.setTypeOfSportCategory(updatedPlayer.getTypeOfSportCategory());
             player.setSold(updatedPlayer.isSold());
             player.setAuction(updatedPlayer.getAuction());
+            player.setImage(updatedPlayer.getImage());
             return playerRepository.save(player);
         } else {
             throw new RuntimeException("Player not found with id: " + id);

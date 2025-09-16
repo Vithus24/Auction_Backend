@@ -1,4 +1,5 @@
 package Auction.Auction.entity;
+
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -23,6 +24,9 @@ public class Player {
     @ManyToOne
     @JoinColumn(name = "auction_id")
     private Auction auction;
+    @Lob
+    @Column(name = "image", columnDefinition = "LONGBLOB")
+    private byte[] image;
 
     public Long getId() {
         return id;
@@ -110,5 +114,13 @@ public class Player {
 
     public void setAuction(Auction auction) {
         this.auction = auction;
+    }
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
     }
 }
