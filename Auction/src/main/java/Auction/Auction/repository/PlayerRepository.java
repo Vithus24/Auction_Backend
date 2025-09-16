@@ -11,6 +11,9 @@ import java.util.Optional;
 
 @Repository
 public interface PlayerRepository extends JpaRepository<Player, Long> {
+    @Query("SELECT p FROM Player p WHERE p.auction.id = :auctionId")
+    List<Player> findByAuctionId(@Param("auctionId") Long auctionId);
+
     @Query("SELECT p FROM Player p WHERE p.auction.id = :auctionId AND p.email = :email")
     Optional<Player> findByAuctionIdAndEmail(@Param("auctionId") Long auctionId, @Param("email") String email);
 
