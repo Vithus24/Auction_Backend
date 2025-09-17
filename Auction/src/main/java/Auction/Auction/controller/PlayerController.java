@@ -1,5 +1,6 @@
 package Auction.Auction.controller;
 
+import Auction.Auction.dto.PlayerResponse;
 import Auction.Auction.entity.Player;
 import Auction.Auction.service.PlayerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/players")
@@ -20,21 +22,26 @@ public class PlayerController {
     private PlayerService playerService;
 
     @GetMapping
-    public List<Player> getAllPlayers() {
-        return playerService.findAll();
+    public List<PlayerResponse> getAllPlayers() {
+        return playerService.findAll().stream()
+                .map(PlayerResponse::new)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Player> getPlayerById(@PathVariable Long id) {
+    public ResponseEntity<PlayerResponse> getPlayerById(@PathVariable Long id) {
         return playerService.findById(id)
-                .map(ResponseEntity::ok)
+                .map(player -> ResponseEntity.ok(new PlayerResponse(player)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/auction/{auctionId}")
-    public ResponseEntity<List<Player>> getPlayersByAuctionId(@PathVariable Long auctionId) {
+    public ResponseEntity<List<PlayerResponse>> getPlayersByAuctionId(@PathVariable Long auctionId) {
         List<Player> players = playerService.findByAuctionId(auctionId);
-        return players.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(players);
+        List<PlayerResponse> response = players.stream()
+                .map(PlayerResponse::new)
+                .collect(Collectors.toList());
+        return response.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(response);
     }
 
     @PostMapping
