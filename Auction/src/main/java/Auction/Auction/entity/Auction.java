@@ -1,105 +1,47 @@
 package Auction.Auction.entity;
+
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "auctions", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"admin_id", "auction_name"})
 })
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Auction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(nullable = false)
     private String auctionName;
+    @Column(nullable = false)
     private LocalDateTime auctionDate;
+    @Column(nullable = false)
     private String typeOfSport;
+    @Column(nullable = false)
     private Double bidIncreaseBy;
+    @Column(nullable = false)
     private Double minimumBid;
+    @Column(nullable = false)
     private Double pointsPerTeam;
+    @Column(nullable = false)
     private Integer playerPerTeam;
-    private String status;
-    @ManyToOne
-    @JoinColumn(name = "admin_id")
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private AuctionStatus status;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admin_id", nullable = false)
     private User admin;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getAuctionName() {
-        return auctionName;
-    }
-
-    public void setAuctionName(String auctionName) {
-        this.auctionName = auctionName;
-    }
-
-    public LocalDateTime getAuctionDate() {
-        return auctionDate;
-    }
-
-    public void setAuctionDate(LocalDateTime auctionDate) {
-        this.auctionDate = auctionDate;
-    }
-
-    public String getTypeOfSport() {
-        return typeOfSport;
-    }
-
-    public void setTypeOfSport(String typeOfSport) {
-        this.typeOfSport = typeOfSport;
-    }
-
-    public Double getBidIncreaseBy() {
-        return bidIncreaseBy;
-    }
-
-    public void setBidIncreaseBy(Double bidIncreaseBy) {
-        this.bidIncreaseBy = bidIncreaseBy;
-    }
-
-    public Double getMinimumBid() {
-        return minimumBid;
-    }
-
-    public void setMinimumBid(Double minimumBid) {
-        this.minimumBid = minimumBid;
-    }
-
-    public Double getPointsPerTeam() {
-        return pointsPerTeam;
-    }
-
-    public void setPointsPerTeam(Double pointsPerTeam) {
-        this.pointsPerTeam = pointsPerTeam;
-    }
-
-    public Integer getPlayerPerTeam() {
-        return playerPerTeam;
-    }
-
-    public void setPlayerPerTeam(Integer playerPerTeam) {
-        this.playerPerTeam = playerPerTeam;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public User getAdmin() {
-        return admin;
-    }
-
-    public void setAdmin(User admin) {
-        this.admin = admin;
-    }
+    @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Team> teams = new ArrayList<>();
 }

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import java.security.SecureRandom;
 
 @Component
-public class CodeGenerator {
+public class VerificationCodeGenerator {
     private static final String CHARACTERS = "0123456789";
     private static int length;
 

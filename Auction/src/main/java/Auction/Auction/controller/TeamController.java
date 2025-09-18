@@ -1,46 +1,64 @@
 package Auction.Auction.controller;
 
-import Auction.Auction.entity.Team;
+import Auction.Auction.dto.TeamRequest;
+import Auction.Auction.dto.TeamResponse;
 import Auction.Auction.service.TeamService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
 @RequestMapping("/teams")
 public class TeamController {
-    @Autowired
-    private TeamService teamService;
+    private final TeamService teamService;
+
+    public TeamController(TeamService teamService) {
+        this.teamService = teamService;
+    }
 
     @GetMapping
-    public List<Team> getAllTeams() {
-        return teamService.findAll();
+    public ResponseEntity<List<TeamResponse>> getAllTeams() {
+        List<TeamResponse> teamResponseList = teamService.findAll();
+        if (teamResponseList.isEmpty()) {
+            ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(teamResponseList);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Team> getTeamById(@PathVariable Long id) {
-        return teamService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<TeamResponse> getTeamById(@PathVariable Long id) {
+        return ResponseEntity.ok(teamService.getTeamById(id));
     }
 
-    @PostMapping
+    @PostMapping(consumes = {"multipart/form-data"})
     @PreAuthorize("hasRole('ADMIN')")
-    public Team createTeam(@RequestBody Team team) {
-        return teamService.save(team);
+    public ResponseEntity<TeamResponse> createTeam(
+            @RequestPart("team") String teamRequestJson,
+            @RequestPart("image") MultipartFile imageFile
+    ) throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        TeamRequest teamRequest = objectMapper.readValue(teamRequestJson, TeamRequest.class);
+        byte[] imageBytes = imageFile.getBytes();
+        return ResponseEntity.ok(teamService.save(teamRequest, imageBytes));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Team> updateTeam(@PathVariable Long id, @RequestBody Team team) {
-        try {
-            return ResponseEntity.ok(teamService.update(id, team));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<TeamResponse> updateTeam(
+            @PathVariable Long id,
+            @RequestPart("team") String teamRequestJson,
+            @RequestPart("image") MultipartFile imageFile
+    ) throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        TeamRequest teamRequest = objectMapper.readValue(teamRequestJson, TeamRequest.class);
+        return ResponseEntity.ok(teamService.update(id, teamRequest, imageFile));
     }
 
     @DeleteMapping("/{id}")
@@ -48,5 +66,12 @@ public class TeamController {
     public ResponseEntity<Void> deleteTeam(@PathVariable Long id) {
         teamService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/image")
+    public ResponseEntity<byte[]> getTeamImage(@PathVariable Long id) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, "image/png")
+                .body(teamService.getTeamImage(id));
     }
 }

@@ -8,11 +8,11 @@ import Auction.Auction.entity.User;
 import Auction.Auction.exception.EmailAlreadyUsedException;
 import Auction.Auction.exception.EmailNotVerifiedException;
 import Auction.Auction.exception.UserNotFoundException;
-import Auction.Auction.exception.VerificationCodeException;
+import Auction.Auction.exception.InvalidOrExpiredVerificationCodeException;
 import Auction.Auction.mapper.UserMapper;
 import Auction.Auction.repository.UserRepository;
 import Auction.Auction.security.JwtTokenProvider;
-import Auction.Auction.util.CodeGenerator;
+import Auction.Auction.util.VerificationCodeGenerator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -57,7 +57,7 @@ public class AuthService {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             userRepository.save(user);
         }
-        String code = CodeGenerator.generateCode();
+        String code = VerificationCodeGenerator.generateCode();
         String key = "verification:" + registerRequest.email();
         redisTemplate.opsForValue().set(key, code, Duration.ofSeconds(codeExpirySeconds));
         emailService.sendVerificationEmail(registerRequest.email(), code);
@@ -67,7 +67,7 @@ public class AuthService {
         String key = "verification:" + verificationRequest.email();
         String storedCode = (String) redisTemplate.opsForValue().get(key);
         if (storedCode == null || !storedCode.equals(verificationRequest.code())) {
-            throw new VerificationCodeException("Invalid or expired verification code");
+            throw new InvalidOrExpiredVerificationCodeException("Invalid or expired verification code");
         }
         Optional<User> optionalUser = userRepository.findByEmail(verificationRequest.email());
         if (optionalUser.isPresent()) {
