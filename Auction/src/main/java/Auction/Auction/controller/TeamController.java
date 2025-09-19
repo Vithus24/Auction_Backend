@@ -4,7 +4,6 @@ import Auction.Auction.dto.TeamRequest;
 import Auction.Auction.dto.TeamResponse;
 import Auction.Auction.service.TeamService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

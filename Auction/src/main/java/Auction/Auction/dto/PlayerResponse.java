@@ -43,6 +43,7 @@ public record PlayerResponse(
         }
         return "image/jpeg";
     }
+
     public PlayerResponse(Auction.Auction.entity.Player player) {
         this(
                 player.getId(),
