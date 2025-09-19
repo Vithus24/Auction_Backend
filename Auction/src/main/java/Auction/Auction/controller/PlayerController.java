@@ -44,7 +44,7 @@ public class PlayerController {
         List<PlayerResponse> response = players.stream()
                 .map(PlayerResponse::new)
                 .collect(Collectors.toList());
-        return response.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(response);
+        return ResponseEntity.ok(response);
     }
 
     /**

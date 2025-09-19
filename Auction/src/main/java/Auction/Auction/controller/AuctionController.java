@@ -1,8 +1,6 @@
 package Auction.Auction.controller;
 
 import Auction.Auction.entity.Auction;
-import Auction.Auction.entity.Bid;
-import Auction.Auction.entity.Player;
 import Auction.Auction.service.AuctionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -32,25 +30,20 @@ public class AuctionController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Auction> getAuctionById(@PathVariable Long id) {
-        return auctionService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Optional<Auction> auction = auctionService.findById(id);
+        return auction.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Auction> createAuction(@RequestBody Auction auction) {
-        return ResponseEntity.ok(auctionService.createAuction(auction));
+    public ResponseEntity<Auction> createAuction(@RequestBody Auction auction, @RequestParam Long adminId) {
+        return ResponseEntity.ok(auctionService.createAuction(auction, adminId));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Auction> updateAuction(@PathVariable Long id, @RequestBody Auction auction) {
-        try {
-            return ResponseEntity.ok(auctionService.update(id, auction));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Auction> updateAuction(@PathVariable Long id, @RequestBody Auction auction, @RequestParam(required = false) Long adminId) {
+        return ResponseEntity.ok(auctionService.update(id, auction, adminId));
     }
 
     @DeleteMapping("/{id}")
@@ -59,4 +52,8 @@ public class AuctionController {
         auctionService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+
+
+
 }

@@ -1,5 +1,6 @@
 package Auction.Auction.config;
 
+
 import Auction.Auction.security.JwtTokenProvider;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.ServerHttpRequest;

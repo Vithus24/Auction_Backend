@@ -1,4 +1,5 @@
 package Auction.Auction.entity;
+
 import jakarta.persistence.*;
 
 @Entity
