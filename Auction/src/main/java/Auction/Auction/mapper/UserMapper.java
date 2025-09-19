@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class UserMapper {
-    public User RegisterRequestToUser(RegisterRequest registerRequest){
+    public User RegisterRequestToUser(RegisterRequest registerRequest) {
         User user = new User();
         user.setEmail(registerRequest.email());
         user.setPassword(registerRequest.password());

@@ -1,15 +1,8 @@
 package Auction.Auction.service;
 
-import Auction.Auction.entity.Auction;
-import Auction.Auction.entity.Bid;
-import Auction.Auction.entity.Player;
-import Auction.Auction.entity.PlayerAllocation;
-import Auction.Auction.entity.Team;
-import Auction.Auction.repository.AuctionRepository;
-import Auction.Auction.repository.BidRepository;
-import Auction.Auction.repository.PlayerAllocationRepository;
-import Auction.Auction.repository.PlayerRepository;
-import Auction.Auction.repository.TeamRepository;
+
+import Auction.Auction.entity.*;
+import Auction.Auction.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -20,14 +13,17 @@ import java.util.Optional;
 
 @Service
 public class AuctionService {
+    @Autowired
+    private AuctionRepository auctionRepository;
+    @Autowired
+    private PlayerRepository playerRepository;
+    @Autowired
+    private TeamRepository teamRepository;
+    @Autowired
+    private BidRepository bidRepository;
+    @Autowired
+    private PlayerAllocationRepository allocationRepository;
 
-    @Autowired private AuctionRepository auctionRepository;
-    @Autowired private PlayerRepository playerRepository;
-    @Autowired private TeamRepository teamRepository;
-    @Autowired private BidRepository bidRepository;
-    @Autowired private PlayerAllocationRepository allocationRepository;
-    @Autowired private AuctionWheelService wheelService;
-    @Autowired private SimpMessagingTemplate messagingTemplate;
 
     private int currentRound = 0; // Track the current bidding round
 
