@@ -1,5 +1,7 @@
 package Auction.Auction.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -41,7 +43,9 @@ public class Auction {
     private AuctionStatus status;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User admin;
     @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Team> teams = new ArrayList<>();
 }
