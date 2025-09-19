@@ -59,32 +59,4 @@ public class AuctionController {
         auctionService.delete(id);
         return ResponseEntity.noContent().build();
     }
-
-    @PostMapping("/{playerId}/bid")
-    @PreAuthorize("hasRole('TEAM_OWNER')")
-    public ResponseEntity<Bid> placeBid(@PathVariable Long playerId, @RequestParam Long teamId, @RequestParam double amount) {
-        return ResponseEntity.ok(auctionService.placeBid(playerId, teamId, amount));
-    }
-
-    @PostMapping("/{playerId}/allocate")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> allocatePlayer(@PathVariable Long playerId) {
-        auctionService.allocatePlayer(playerId);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/wheel-select")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Player> startWheelSelection() {
-        Player selectedPlayer = auctionService.startWheelSelection();
-        if (selectedPlayer == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(selectedPlayer);
-    }
-
-    @GetMapping("/available-players")
-    public List<Player> getAvailablePlayersForWheel() {
-        return auctionService.getAvailablePlayersForWheel();
-    }
 }
