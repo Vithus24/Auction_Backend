@@ -2,6 +2,7 @@ package Auction.Auction.controller;
 
 import Auction.Auction.entity.Auction;
 import Auction.Auction.entity.Bid;
+import Auction.Auction.entity.Player;
 import Auction.Auction.service.AuctionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -31,20 +32,25 @@ public class AuctionController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Auction> getAuctionById(@PathVariable Long id) {
-        Optional<Auction> auction = auctionService.findById(id);
-        return auction.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+        return auctionService.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Auction> createAuction(@RequestBody Auction auction, @RequestParam Long adminId) {
-        return ResponseEntity.ok(auctionService.createAuction(auction, adminId));
+    public ResponseEntity<Auction> createAuction(@RequestBody Auction auction) {
+        return ResponseEntity.ok(auctionService.createAuction(auction));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Auction> updateAuction(@PathVariable Long id, @RequestBody Auction auction, @RequestParam(required = false) Long adminId) {
-        return ResponseEntity.ok(auctionService.update(id, auction, adminId));
+    public ResponseEntity<Auction> updateAuction(@PathVariable Long id, @RequestBody Auction auction) {
+        try {
+            return ResponseEntity.ok(auctionService.update(id, auction));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")
@@ -65,5 +71,20 @@ public class AuctionController {
     public ResponseEntity<Void> allocatePlayer(@PathVariable Long playerId) {
         auctionService.allocatePlayer(playerId);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/wheel-select")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Player> startWheelSelection() {
+        Player selectedPlayer = auctionService.startWheelSelection();
+        if (selectedPlayer == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(selectedPlayer);
+    }
+
+    @GetMapping("/available-players")
+    public List<Player> getAvailablePlayersForWheel() {
+        return auctionService.getAvailablePlayersForWheel();
     }
 }
