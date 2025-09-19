@@ -1,7 +1,6 @@
 package Auction.Auction.controller;
 
 import Auction.Auction.entity.Auction;
-import Auction.Auction.entity.Bid;
 import Auction.Auction.service.AuctionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -54,16 +53,7 @@ public class AuctionController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{playerId}/bid")
-    @PreAuthorize("hasRole('TEAM_OWNER')")
-    public ResponseEntity<Bid> placeBid(@PathVariable Long playerId, @RequestParam Long teamId, @RequestParam double amount) {
-        return ResponseEntity.ok(auctionService.placeBid(playerId, teamId, amount));
-    }
 
-    @PostMapping("/{playerId}/allocate")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> allocatePlayer(@PathVariable Long playerId) {
-        auctionService.allocatePlayer(playerId);
-        return ResponseEntity.ok().build();
-    }
+
+
 }

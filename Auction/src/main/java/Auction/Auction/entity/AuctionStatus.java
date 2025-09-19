@@ -3,5 +3,6 @@ package Auction.Auction.entity;
 public enum AuctionStatus {
     UPCOMING,
     LIVE,
-    OPEN
+    OPEN,
+    COMPLETED
 }
