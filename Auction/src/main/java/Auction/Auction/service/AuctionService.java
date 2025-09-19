@@ -1,8 +1,10 @@
 package Auction.Auction.service;
 
+
 import Auction.Auction.entity.*;
 import Auction.Auction.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,8 +25,9 @@ public class AuctionService {
     private PlayerAllocationRepository allocationRepository;
 
 
-    @Autowired
-    private UserRepository userRepository;
+    private int currentRound = 0; // Track the current bidding round
+
+    // ---------------- Auction CRUD ----------------
 
     public List<Auction> findAll() {
         return auctionRepository.findAll();
@@ -34,86 +37,121 @@ public class AuctionService {
         return auctionRepository.findById(id);
     }
 
-    public Auction createAuction(Auction auction, Long adminId) {
-        User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
-        auction.setAdmin(admin);
-        return auctionRepository.save(auction);
+    public Auction createAuction(Auction auction) {
+        Auction savedAuction = auctionRepository.save(auction);
+
+        // Reset wheel + rounds for a new auction
+        currentRound = 0;
+        wheelService.resetRounds();
+
+        return savedAuction;
     }
 
-    public Auction update(Long id, Auction updatedAuction, Long adminId) {
-        Optional<Auction> existingAuction = auctionRepository.findById(id);
-        if (existingAuction.isPresent()) {
-            Auction auction = existingAuction.get();
-            auction.setAuctionName(updatedAuction.getAuctionName());
-            auction.setAuctionDate(updatedAuction.getAuctionDate());
-            auction.setTypeOfSport(updatedAuction.getTypeOfSport());
-            auction.setBidIncreaseBy(updatedAuction.getBidIncreaseBy());
-            auction.setMinimumBid(updatedAuction.getMinimumBid());
-            auction.setPointsPerTeam(updatedAuction.getPointsPerTeam());
-            auction.setPlayerPerTeam(updatedAuction.getPlayerPerTeam());
-            auction.setStatus(updatedAuction.getStatus());
-            if (adminId != null) {
-                User admin = userRepository.findById(adminId)
-                        .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
-                auction.setAdmin(admin);
-            }
-            return auctionRepository.save(auction);
-        } else {
-            throw new RuntimeException("Auction not found with id: " + id);
-        }
+    public Auction update(Long id, Auction updatedAuction) {
+        return auctionRepository.findById(id)
+                .map(existing -> {
+                    existing.setAuctionDate(updatedAuction.getAuctionDate());
+                    existing.setStatus(updatedAuction.getStatus());
+                    return auctionRepository.save(existing);
+                })
+                .orElseThrow(() -> new RuntimeException("Auction not found with id: " + id));
     }
 
     public void delete(Long id) {
         auctionRepository.deleteById(id);
     }
-
     public List<Auction> findByAdminId(Long adminId) {
         return auctionRepository.findByAdminId(adminId);
     }
+    // ---------------- Bidding ----------------
 
     public Bid placeBid(Long playerId, Long teamId, double amount) {
         Player player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new RuntimeException("Player not found"));
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException("Team not found"));
-        if (team.getBudget() < amount || player.isSold()) {
-            throw new RuntimeException("Invalid bid: Insufficient budget or player already sold");
+
+        if (team.getBudget() < amount) {
+            throw new RuntimeException("Invalid bid: Insufficient budget");
         }
+        if (player.isSold()) {
+            throw new RuntimeException("Invalid bid: Player already sold");
+        }
+
         Bid bid = new Bid();
         bid.setPlayer(player);
         bid.setTeam(team);
         bid.setBidAmount(amount);
         bid.setTimestamp(LocalDateTime.now());
-        return bidRepository.save(bid);
+
+        Bid savedBid = bidRepository.save(bid);
+
+        // ✅ Broadcast bid to all connected clients
+        messagingTemplate.convertAndSend("/topic/bids", savedBid);
+
+        return savedBid;
     }
+
+    // ---------------- Allocation ----------------
 
     public void allocatePlayer(Long playerId) {
         Player player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new RuntimeException("Player not found"));
+
         if (player.isSold()) {
-            return;
+            return; // Already sold
         }
 
         List<Bid> bids = bidRepository.findByPlayer(player);
         if (bids.isEmpty()) {
-            return;
+            return; // No bids placed
         }
 
+        // Find the highest bid
         Bid highestBid = bids.stream()
                 .max((b1, b2) -> Double.compare(b1.getBidAmount(), b2.getBidAmount()))
                 .get();
+
         Team winningTeam = highestBid.getTeam();
-        winningTeam.setBudget(winningTeam.getBudget() - highestBid.getBidAmount());
+        double finalPrice = highestBid.getBidAmount();
+
+        // Deduct budget
+        winningTeam.setBudget(winningTeam.getBudget() - finalPrice);
         teamRepository.save(winningTeam);
 
+        // Save allocation
         PlayerAllocation allocation = new PlayerAllocation();
         allocation.setPlayer(player);
         allocation.setTeam(winningTeam);
-        allocation.setFinalPrice(highestBid.getBidAmount());
+        allocation.setFinalPrice(finalPrice);
         allocationRepository.save(allocation);
 
+        // Mark player as sold
         player.setSold(true);
         playerRepository.save(player);
+
+        // ✅ Broadcast allocation
+        messagingTemplate.convertAndSend("/topic/allocations", allocation);
+
+        // Move to next round
+        currentRound++;
+        wheelService.startNewRound();
+    }
+
+    // ---------------- Wheel Selection ----------------
+
+    public Player startWheelSelection() {
+        Player selectedPlayer = wheelService.selectNextPlayer(currentRound + 1);
+
+        if (selectedPlayer != null) {
+            // ✅ Broadcast new selected player
+            messagingTemplate.convertAndSend("/topic/current-player", selectedPlayer);
+        }
+
+        return selectedPlayer;
+    }
+
+    public List<Player> getAvailablePlayersForWheel() {
+        return wheelService.getAvailablePlayers(currentRound + 1);
     }
 }
