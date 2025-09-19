@@ -75,6 +75,7 @@ public class BidController {
 //        bidService.allocatePlayer(playerId);
 //        return ResponseEntity.ok().build();
 //    }
+//    test
 
     @PostMapping("/wheel-select")
     @PreAuthorize("hasRole('ADMIN')")
