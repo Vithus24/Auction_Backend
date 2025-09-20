@@ -83,6 +83,7 @@ public class BidService {
             throw new RuntimeException("Bid not found with id: " + id);
         }
     }
+
     public void delete(Long id) {
         bidRepository.deleteById(id);
     }
