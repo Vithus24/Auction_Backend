@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 @Service
 public class PlayerService {
@@ -41,6 +42,18 @@ public class PlayerService {
 
     public List<Long> findAvailableIdsByAuctionId(Long auctionId) {
         return playerRepository.findIdsByAuctionIdAndPlayerStatus(auctionId, PlayerStatus.AVAILABLE);
+    }
+
+    public Long findRandomAvailableIdByAuctionId(Long auctionId) {
+        List<Long> ids = playerRepository.findIdsByAuctionIdAndPlayerStatus(
+                auctionId, PlayerStatus.AVAILABLE);
+
+        if (ids.isEmpty()) {
+            throw new IllegalStateException("No AVAILABLE players for auction " + auctionId);
+        }
+
+        Random random = new Random();
+        return ids.get(random.nextInt(ids.size()));
     }
 
     public Player save(Player player) {

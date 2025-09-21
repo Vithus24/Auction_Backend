@@ -59,6 +59,12 @@ public class PlayerController {
         );
     }
 
+    @GetMapping(value = "/{auctionId}/available", produces = "application/json")
+    public ResponseEntity<Long> getRandomAvailablePlayerId(@PathVariable Long auctionId) {
+        Long randomId = playerService.findRandomAvailableIdByAuctionId(auctionId);
+        return ResponseEntity.ok(randomId);
+    }
+
     @GetMapping("/auction/{auctionId}/status/sold")
     public ResponseEntity<List<PlayerResponse>> getSoldPlayers(@PathVariable Long auctionId) {
         return ResponseEntity.ok(

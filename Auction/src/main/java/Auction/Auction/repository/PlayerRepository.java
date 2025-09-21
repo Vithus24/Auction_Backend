@@ -29,5 +29,4 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
     @Query("SELECT p.id FROM Player p WHERE p.auction.id = :auctionId AND p.playerStatus = :status")
     List<Long> findIdsByAuctionIdAndPlayerStatus(@Param("auctionId") Long auctionId, @Param("status") PlayerStatus status);
 
-    List<Player> findByStatus(String status);
 }
