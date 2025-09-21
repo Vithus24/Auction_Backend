@@ -2,6 +2,7 @@ package Auction.Auction.controller;
 
 import Auction.Auction.dto.PlayerResponse;
 import Auction.Auction.entity.Player;
+import Auction.Auction.entity.PlayerStatus;
 import Auction.Auction.service.PlayerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -44,7 +45,42 @@ public class PlayerController {
         List<PlayerResponse> response = players.stream()
                 .map(PlayerResponse::new)
                 .collect(Collectors.toList());
-        return response.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(response);
+        return ResponseEntity.ok(response);
+    }
+
+    // -------- NEW FILTERED ENDPOINTS --------
+
+    @GetMapping("/auction/{auctionId}/status/available")
+    public ResponseEntity<List<PlayerResponse>> getAvailablePlayers(@PathVariable Long auctionId) {
+        return ResponseEntity.ok(
+                playerService.findAvailableByAuctionId(auctionId).stream()
+                        .map(PlayerResponse::new)
+                        .collect(Collectors.toList())
+        );
+    }
+
+    @GetMapping("/auction/{auctionId}/status/sold")
+    public ResponseEntity<List<PlayerResponse>> getSoldPlayers(@PathVariable Long auctionId) {
+        return ResponseEntity.ok(
+                playerService.findSoldByAuctionId(auctionId).stream()
+                        .map(PlayerResponse::new)
+                        .collect(Collectors.toList())
+        );
+    }
+
+    @GetMapping("/auction/{auctionId}/status/unsold")
+    public ResponseEntity<List<PlayerResponse>> getUnsoldPlayers(@PathVariable Long auctionId) {
+        return ResponseEntity.ok(
+                playerService.findUnsoldByAuctionId(auctionId).stream()
+                        .map(PlayerResponse::new)
+                        .collect(Collectors.toList())
+        );
+    }
+
+    // IDs only for available players in an auction
+    @GetMapping("/auction/{auctionId}/available/ids")
+    public ResponseEntity<List<Long>> getAvailablePlayerIds(@PathVariable Long auctionId) {
+        return ResponseEntity.ok(playerService.findAvailableIdsByAuctionId(auctionId));
     }
 
     /**
@@ -64,7 +100,6 @@ public class PlayerController {
             return ResponseEntity.noContent().build();
         }
 
-        // Detect content type from byte array
         String contentType = detectContentType(player.getImage());
 
         HttpHeaders headers = new HttpHeaders();
@@ -76,34 +111,23 @@ public class PlayerController {
                 .body(player.getImage());
     }
 
-    /**
-     * Helper method to detect image content type from byte array
-     */
     private String detectContentType(byte[] imageData) {
         if (imageData == null || imageData.length < 8) {
             return MediaType.IMAGE_JPEG_VALUE;
         }
-
-        // Check for JPEG
         if (imageData[0] == (byte) 0xFF && imageData[1] == (byte) 0xD8 && imageData[2] == (byte) 0xFF) {
             return MediaType.IMAGE_JPEG_VALUE;
         }
-
-        // Check for PNG
         if (imageData[0] == (byte) 0x89 && imageData[1] == (byte) 0x50 &&
                 imageData[2] == (byte) 0x4E && imageData[3] == (byte) 0x47 &&
                 imageData[4] == (byte) 0x0D && imageData[5] == (byte) 0x0A &&
                 imageData[6] == (byte) 0x1A && imageData[7] == (byte) 0x0A) {
             return MediaType.IMAGE_PNG_VALUE;
         }
-
-        // Check for GIF
         if (imageData[0] == (byte) 0x47 && imageData[1] == (byte) 0x49 &&
                 imageData[2] == (byte) 0x46 && imageData[3] == (byte) 0x38) {
             return MediaType.IMAGE_GIF_VALUE;
         }
-
-        // Check for WebP
         if (imageData.length >= 12 &&
                 imageData[0] == (byte) 0x52 && imageData[1] == (byte) 0x49 &&
                 imageData[2] == (byte) 0x46 && imageData[3] == (byte) 0x46 &&
@@ -111,8 +135,7 @@ public class PlayerController {
                 imageData[10] == (byte) 0x42 && imageData[11] == (byte) 0x50) {
             return "image/webp";
         }
-
-        return MediaType.IMAGE_JPEG_VALUE; // default
+        return MediaType.IMAGE_JPEG_VALUE;
     }
 
     @PostMapping
@@ -126,19 +149,19 @@ public class PlayerController {
             mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
             Player player = mapper.readValue(playerJson, Player.class);
 
-            // Handle image upload
+            // default status if client didn't send it
+            if (player.getPlayerStatus() == null) {
+                player.setPlayerStatus(PlayerStatus.AVAILABLE);
+            }
+
             if (image != null && !image.isEmpty()) {
-                // Validate image type
                 String contentType = image.getContentType();
                 if (contentType == null || !contentType.startsWith("image/")) {
                     return ResponseEntity.badRequest().build();
                 }
-
-                // Set maximum file size (e.g., 5MB)
                 if (image.getSize() > 5 * 1024 * 1024) {
                     return ResponseEntity.badRequest().build();
                 }
-
                 player.setImage(image.getBytes());
             }
 
@@ -162,19 +185,14 @@ public class PlayerController {
             mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
             Player player = mapper.readValue(playerJson, Player.class);
 
-            // Handle image update
             if (image != null && !image.isEmpty()) {
-                // Validate image type
                 String contentType = image.getContentType();
                 if (contentType == null || !contentType.startsWith("image/")) {
                     return ResponseEntity.badRequest().build();
                 }
-
-                // Set maximum file size (e.g., 5MB)
                 if (image.getSize() > 5 * 1024 * 1024) {
                     return ResponseEntity.badRequest().build();
                 }
-
                 player.setImage(image.getBytes());
             }
 
