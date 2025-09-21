@@ -1,6 +1,10 @@
 package Auction.Auction.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
@@ -8,6 +12,10 @@ import java.time.LocalDate;
 @Table(name = "players", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"auction_id", "email"})
 })
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Player {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,6 +28,7 @@ public class Player {
     private String tshirtSize;
     private String bottomSize;
     private String typeOfSportCategory;
+    private String status;
     private boolean sold;
     @ManyToOne
     @JoinColumn(name = "auction_id")

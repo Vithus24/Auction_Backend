@@ -18,4 +18,6 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
     Optional<Player> findByAuctionIdAndEmail(@Param("auctionId") Long auctionId, @Param("email") String email);
 
     List<Player> findBySoldFalse();
+
+    List<Player> findByStatus(String status);
 }
