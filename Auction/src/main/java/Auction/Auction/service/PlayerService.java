@@ -1,6 +1,7 @@
 package Auction.Auction.service;
 
 import Auction.Auction.entity.Player;
+import Auction.Auction.entity.PlayerStatus;
 import Auction.Auction.repository.PlayerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,35 +26,76 @@ public class PlayerService {
         return playerRepository.findByAuctionId(auctionId);
     }
 
+    // NEW convenience finders
+    public List<Player> findAvailableByAuctionId(Long auctionId) {
+        return playerRepository.findByAuctionIdAndPlayerStatus(auctionId, PlayerStatus.AVAILABLE);
+    }
+
+    public List<Player> findSoldByAuctionId(Long auctionId) {
+        return playerRepository.findByAuctionIdAndPlayerStatus(auctionId, PlayerStatus.SOLD);
+    }
+
+    public List<Player> findUnsoldByAuctionId(Long auctionId) {
+        return playerRepository.findByAuctionIdAndPlayerStatus(auctionId, PlayerStatus.UNSOLD);
+    }
+
+    public List<Long> findAvailableIdsByAuctionId(Long auctionId) {
+        return playerRepository.findIdsByAuctionIdAndPlayerStatus(auctionId, PlayerStatus.AVAILABLE);
+    }
+
     public Player save(Player player) {
+        // enforce unique (auction_id, email)
         if (player.getAuction() != null && player.getAuction().getId() != null && player.getEmail() != null) {
             Optional<Player> existingPlayer = playerRepository.findByAuctionIdAndEmail(player.getAuction().getId(), player.getEmail());
             if (existingPlayer.isPresent()) {
-                throw new RuntimeException("Player with email " + player.getEmail() + " already exists in auction " + player.getAuction().getId());
+                throw new RuntimeException("Player with email " + player.getEmail() +
+                        " already exists in auction " + player.getAuction().getId());
             }
         }
+
+        // default and sync status/sold
+        if (player.getPlayerStatus() == null) {
+            player.setPlayerStatus(PlayerStatus.AVAILABLE);
+        }
+        player.setSold(player.getPlayerStatus() == PlayerStatus.SOLD);
+
         return playerRepository.save(player);
     }
 
     public Player update(Long id, Player updatedPlayer) {
         Optional<Player> existingPlayer = playerRepository.findById(id);
-        if (existingPlayer.isPresent()) {
-            Player player = existingPlayer.get();
-            player.setFirstname(updatedPlayer.getFirstname());
-            player.setLastname(updatedPlayer.getLastname());
-            player.setMobileno(updatedPlayer.getMobileno());
-            player.setEmail(updatedPlayer.getEmail());
-            player.setDob(updatedPlayer.getDob());
-            player.setTshirtSize(updatedPlayer.getTshirtSize());
-            player.setBottomSize(updatedPlayer.getBottomSize());
-            player.setTypeOfSportCategory(updatedPlayer.getTypeOfSportCategory());
-            player.setSold(updatedPlayer.isSold());
-            player.setAuction(updatedPlayer.getAuction());
-            player.setImage(updatedPlayer.getImage());
-            return playerRepository.save(player);
-        } else {
+        if (existingPlayer.isEmpty()) {
             throw new RuntimeException("Player not found with id: " + id);
         }
+
+        Player player = existingPlayer.get();
+        player.setFirstname(updatedPlayer.getFirstname());
+        player.setLastname(updatedPlayer.getLastname());
+        player.setMobileno(updatedPlayer.getMobileno());
+        player.setEmail(updatedPlayer.getEmail());
+        player.setDob(updatedPlayer.getDob());
+        player.setTshirtSize(updatedPlayer.getTshirtSize());
+        player.setBottomSize(updatedPlayer.getBottomSize());
+        player.setTypeOfSportCategory(updatedPlayer.getTypeOfSportCategory());
+        player.setAuction(updatedPlayer.getAuction());
+
+        // NEW fields
+        player.setBidTeam(updatedPlayer.getBidTeam());
+        player.setBidAmount(updatedPlayer.getBidAmount());
+
+        // Status: if provided, use it; otherwise keep existing
+        if (updatedPlayer.getPlayerStatus() != null) {
+            player.setPlayerStatus(updatedPlayer.getPlayerStatus());
+        }
+        // keep "sold" consistent with status
+        player.setSold(player.getPlayerStatus() == PlayerStatus.SOLD);
+
+        // image (optional)
+        if (updatedPlayer.getImage() != null && updatedPlayer.getImage().length > 0) {
+            player.setImage(updatedPlayer.getImage());
+        }
+
+        return playerRepository.save(player);
     }
 
     public void delete(Long id) {

@@ -1,25 +1,27 @@
 package Auction.Auction.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+
+import Auction.Auction.entity.PlayerStatus;
 
 @Entity
 @Table(name = "players", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"auction_id", "email"})
 })
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
+@ToString(exclude = {"image", "auction", "bidTeam"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Player {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
+
     private String firstname;
     private String lastname;
     private String mobileno;
@@ -28,108 +30,39 @@ public class Player {
     private String tshirtSize;
     private String bottomSize;
     private String typeOfSportCategory;
-    private String status;
     private boolean sold;
+
     @ManyToOne
     @JoinColumn(name = "auction_id")
     private Auction auction;
+
     @Lob
     @Column(name = "image", columnDefinition = "LONGBLOB")
     private byte[] image;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "player_status", nullable = false)
+    private PlayerStatus playerStatus;
 
-    public Long getId() {
-        return id;
+
+    @ManyToOne
+    @JoinColumn(name = "bid_team_id")
+    private Team bidTeam;
+
+    // NEW
+    @Column(name = "bid_amount", precision = 19, scale = 2)
+    private BigDecimal bidAmount;
+
+    @PrePersist
+    public void prePersist() {
+        if (playerStatus == null) {
+            playerStatus = PlayerStatus.AVAILABLE;
+        }
+        // keep "sold" consistent
+        this.sold = (playerStatus == PlayerStatus.SOLD);
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getFirstname() {
-        return firstname;
-    }
-
-    public void setFirstname(String firstname) {
-        this.firstname = firstname;
-    }
-
-    public String getLastname() {
-        return lastname;
-    }
-
-    public void setLastname(String lastname) {
-        this.lastname = lastname;
-    }
-
-    public String getMobileno() {
-        return mobileno;
-    }
-
-    public void setMobileno(String mobileno) {
-        this.mobileno = mobileno;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public LocalDate getDob() {
-        return dob;
-    }
-
-    public void setDob(LocalDate dob) {
-        this.dob = dob;
-    }
-
-    public String getTshirtSize() {
-        return tshirtSize;
-    }
-
-    public void setTshirtSize(String tshirtSize) {
-        this.tshirtSize = tshirtSize;
-    }
-
-    public String getBottomSize() {
-        return bottomSize;
-    }
-
-    public void setBottomSize(String bottomSize) {
-        this.bottomSize = bottomSize;
-    }
-
-    public String getTypeOfSportCategory() {
-        return typeOfSportCategory;
-    }
-
-    public void setTypeOfSportCategory(String typeOfSportCategory) {
-        this.typeOfSportCategory = typeOfSportCategory;
-    }
-
-    public boolean isSold() {
-        return sold;
-    }
-
-    public void setSold(boolean sold) {
-        this.sold = sold;
-    }
-
-    public Auction getAuction() {
-        return auction;
-    }
-
-    public void setAuction(Auction auction) {
-        this.auction = auction;
-    }
-
-    public byte[] getImage() {
-        return image;
-    }
-
-    public void setImage(byte[] image) {
-        this.image = image;
+    @PreUpdate
+    public void preUpdate() {
+        this.sold = (playerStatus == PlayerStatus.SOLD);
     }
 }

@@ -4,5 +4,6 @@ public enum AuctionStatus {
     UPCOMING,
     LIVE,
     OPEN,
-    COMPLETED
+    COMPLETED,
+    CLOSED
 }
