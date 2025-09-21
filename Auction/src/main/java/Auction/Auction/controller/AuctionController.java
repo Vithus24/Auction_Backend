@@ -2,6 +2,7 @@ package Auction.Auction.controller;
 
 import Auction.Auction.dto.AuctionRequest;
 import Auction.Auction.dto.AuctionResponse;
+import Auction.Auction.entity.Auction;
 import Auction.Auction.entity.Bid;
 import Auction.Auction.exception.CantAddAuctionException;
 import Auction.Auction.service.AuctionService;
@@ -39,7 +40,7 @@ public class AuctionController {
 
     @GetMapping("/admin/{adminId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public List<AuctionResponse> getAuctionsByAdmin(@PathVariable Long adminId) {
+    public List<Auction> getAuctionsByAdmin(@PathVariable Long adminId) {
         return auctionService.findByAdminId(adminId);
     }
 
@@ -62,7 +63,6 @@ public class AuctionController {
         byte[] imageBytes = imageFile.getBytes();
         return ResponseEntity.ok(auctionService.save(auctionRequest, imageBytes));
     }
-
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")

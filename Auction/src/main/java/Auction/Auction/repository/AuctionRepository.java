@@ -13,7 +13,7 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     boolean existsByAuctionNameAndAdminIdAndIdNot(String auctionName, Long admin_id, Long id);
 
     @Query("SELECT a FROM Auction a WHERE a.admin.id = :adminId")
-    List<AuctionResponse> findByAdminId(@Param("adminId") Long adminId);
+    List<Auction> findByAdminId(@Param("adminId") Long adminId);
 
 }
 

@@ -150,7 +150,7 @@ public class AuctionService {
 
     }
 
-    public List<AuctionResponse> findByAdminId(Long adminId) {
+    public List<Auction> findByAdminId(Long adminId) {
         return auctionRepository.findByAdminId(adminId);
     }
 
