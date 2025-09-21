@@ -39,6 +39,7 @@ public class SecurityConfig {
                 .cors(withDefaults()) // ✅ Tell Spring Security to use your CorsConfig
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/ws-auction/**").permitAll()  // Allow connect; interceptor secures
                         .requestMatchers("/login", "/register", "/error", "/verify").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ✅ allow preflight
                         .anyRequest().authenticated()
