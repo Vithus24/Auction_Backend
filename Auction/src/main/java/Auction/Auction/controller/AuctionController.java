@@ -1,50 +1,87 @@
 package Auction.Auction.controller;
 
-import Auction.Auction.entity.Auction;
+import Auction.Auction.dto.AuctionRequest;
+import Auction.Auction.dto.AuctionResponse;
+import Auction.Auction.entity.Bid;
+import Auction.Auction.exception.CantAddAuctionException;
 import Auction.Auction.service.AuctionService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/auctions")
 @CrossOrigin(origins = "http://localhost:3000")
 public class AuctionController {
-    @Autowired
-    private AuctionService auctionService;
+
+
+    private final AuctionService auctionService;
+
+    public AuctionController(AuctionService auctionService) {
+        this.auctionService = auctionService;
+    }
 
     @GetMapping
-    public List<Auction> getAllAuctions() {
-        return auctionService.findAll();
+    public ResponseEntity<List<AuctionResponse>> getAllAucion() {
+        List<AuctionResponse> auctionResponseList = auctionService.findAll();
+        if (auctionResponseList.isEmpty()) {
+            ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(auctionResponseList);
     }
+
 
     @GetMapping("/admin/{adminId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public List<Auction> getAuctionsByAdmin(@PathVariable Long adminId) {
+    public List<AuctionResponse> getAuctionsByAdmin(@PathVariable Long adminId) {
         return auctionService.findByAdminId(adminId);
     }
 
+
     @GetMapping("/{id}")
-    public ResponseEntity<Auction> getAuctionById(@PathVariable Long id) {
-        Optional<Auction> auction = auctionService.findById(id);
-        return auction.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<AuctionResponse> getAuctionById(@PathVariable Long id) {
+        return ResponseEntity.ok(auctionService.getAuctionById(id));
     }
 
-    @PostMapping
+
+    @PostMapping(consumes = {"multipart/form-data"})
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Auction> createAuction(@RequestBody Auction auction, @RequestParam Long adminId) {
-        return ResponseEntity.ok(auctionService.createAuction(auction, adminId));
+    public ResponseEntity<AuctionResponse> createAuction(
+            @RequestPart("auction") String auctionRequestJson,
+            @RequestPart("image") MultipartFile imageFile
+
+    ) throws IOException, CantAddAuctionException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        AuctionRequest auctionRequest = objectMapper.readValue(auctionRequestJson, AuctionRequest.class);
+        byte[] imageBytes = imageFile.getBytes();
+        return ResponseEntity.ok(auctionService.save(auctionRequest, imageBytes));
     }
+
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Auction> updateAuction(@PathVariable Long id, @RequestBody Auction auction, @RequestParam(required = false) Long adminId) {
-        return ResponseEntity.ok(auctionService.update(id, auction, adminId));
+    public ResponseEntity<AuctionResponse> updateAuction(
+            @PathVariable Long id,
+            @RequestPart("auction") String auctionRequestJson,
+            @RequestPart(value = "image", required = false) MultipartFile imageFile
+    ) throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        AuctionRequest auctionRequest = objectMapper.readValue(auctionRequestJson, AuctionRequest.class);
+
+        byte[] imageBytes = null;
+        if (imageFile != null && !imageFile.isEmpty()) {
+            imageBytes = imageFile.getBytes();
+        }
+
+        return ResponseEntity.ok(auctionService.update(id, auctionRequest, imageBytes));
     }
+
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -53,7 +90,24 @@ public class AuctionController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{id}/image")
+    public ResponseEntity<byte[]> getAuctionImage(@PathVariable Long id) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, "image/png")
+                .body(auctionService.getAuctionImage(id));
+    }
 
 
+    @PostMapping("/{playerId}/bid")
+    @PreAuthorize("hasRole('TEAM_OWNER')")
+    public ResponseEntity<Bid> placeBid(@PathVariable Long playerId, @RequestParam Long teamId, @RequestParam double amount) {
+        return ResponseEntity.ok(auctionService.placeBid(playerId, teamId, amount));
+    }
 
+    @PostMapping("/{playerId}/allocate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> allocatePlayer(@PathVariable Long playerId) {
+        auctionService.allocatePlayer(playerId);
+        return ResponseEntity.ok().build();
+    }
 }

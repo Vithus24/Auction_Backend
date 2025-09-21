@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+
 @Entity
 @Table(name = "auctions", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"admin_id", "auction_name"})
@@ -41,6 +42,11 @@ public class Auction {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private AuctionStatus status;
+
+    @Lob
+    @Column(name = "image", columnDefinition = "LONGBLOB")
+    private byte[] image;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -48,4 +54,6 @@ public class Auction {
     @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Team> teams = new ArrayList<>();
+
+
 }
