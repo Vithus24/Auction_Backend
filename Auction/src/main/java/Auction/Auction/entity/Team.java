@@ -28,6 +28,8 @@ public class Team {
     @ManyToOne
     @JoinColumn(name = "auction_id", nullable = false)
     private Auction auction;
+
+
     @Lob
     @Column(name = "image", columnDefinition = "LONGBLOB")
     private byte[] image;
