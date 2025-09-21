@@ -6,8 +6,6 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import Auction.Auction.entity.PlayerStatus;
-
 @Entity
 @Table(name = "players", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"auction_id", "email"})
