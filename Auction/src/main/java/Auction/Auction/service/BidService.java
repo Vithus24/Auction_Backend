@@ -1,14 +1,13 @@
 package Auction.Auction.service;
 
-import Auction.Auction.entity.Bid;
-import Auction.Auction.entity.Player;
-import Auction.Auction.entity.PlayerAllocation;
-import Auction.Auction.entity.Team;
-import Auction.Auction.repository.BidRepository;
-import Auction.Auction.repository.PlayerAllocationRepository;
-import Auction.Auction.repository.PlayerRepository;
-import Auction.Auction.repository.TeamRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import Auction.Auction.dto.BidRequest;
+import Auction.Auction.dto.BidResponse;
+import Auction.Auction.entity.*;
+import Auction.Auction.exception.AuctionIsNotLiveException;
+import Auction.Auction.exception.AuctionNotFoundException;
+import Auction.Auction.exception.UserNotTeamOwnerException;
+import Auction.Auction.mapper.BidMapper;
+import Auction.Auction.repository.*;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -18,20 +17,34 @@ import java.util.Optional;
 
 @Service
 public class BidService {
-    @Autowired
-    private BidRepository bidRepository;
-    @Autowired
-    private PlayerRepository playerRepository;
-    @Autowired
-    private TeamRepository teamRepository;
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
-    @Autowired
-    private AuctionWheelService wheelService;
-    @Autowired
-    private PlayerAllocationRepository allocationRepository;
+    private final BidRepository bidRepository;
+
+    private final PlayerRepository playerRepository;
+
+    private final TeamRepository teamRepository;
+
+    private final SimpMessagingTemplate messagingTemplate;
+
+    private final AuctionWheelService wheelService;
+
+    private final PlayerAllocationRepository allocationRepository;
+
+    private final AuctionRepository auctionRepository;
+
+    private final BidMapper bidMapper;
 
     private int currentRound = 0;
+
+    public BidService(BidRepository bidRepository, PlayerRepository playerRepository, TeamRepository teamRepository, SimpMessagingTemplate messagingTemplate, AuctionWheelService wheelService, PlayerAllocationRepository allocationRepository, AuctionRepository auctionRepository, BidMapper bidMapper) {
+        this.bidRepository = bidRepository;
+        this.playerRepository = playerRepository;
+        this.teamRepository = teamRepository;
+        this.messagingTemplate = messagingTemplate;
+        this.wheelService = wheelService;
+        this.allocationRepository = allocationRepository;
+        this.auctionRepository = auctionRepository;
+        this.bidMapper = bidMapper;
+    }
 
     public List<Bid> findAll() {
         return bidRepository.findAll();
@@ -178,5 +191,38 @@ public class BidService {
 
     public List<Player> getAvailablePlayersForWheel() {
         return wheelService.getAvailablePlayers(currentRound + 1);
+    }
+
+    public BidResponse saveBid(Long auctionId, Long playerId, BidRequest bidRequest) {
+        Optional<Auction> optionalAuction = auctionRepository.findById(auctionId);
+        if(optionalAuction.isEmpty()){
+            throw new AuctionNotFoundException("Auction not found.");
+        }
+
+        if (!optionalAuction.get().getStatus().toString().equals("LIVE")){
+            throw new AuctionIsNotLiveException("This auction not in live.");
+        }
+
+//        if (user.getRole() != Role.TEAM_OWNER) {
+//            throw new UserNotTeamOwnerException("Only TEAM_OWNER can place bids");
+//        }
+//
+//        Optional<Auction> auction = auctionRepository.findById(auctionId);
+//        if (auction.isEmpty()) {
+//            throw new AuctionNotFoundException("Auction not found");
+//        }
+//
+//        if (!auction.get().getStatus().toString().equals("LIVE")) {
+//            throw new AuctionIsNotLiveException("Auction is not live");
+//        }
+//
+//        // Validate amount, check if user owns a team in auction (custom logic)
+//        if (bidRequest.amount() <= auction.getMinimumBid() || bidRequest.amount() % auction.getBidIncreaseBy() != 0) {
+//            throw new AppException("Invalid bid amount");
+//        }
+//
+//        // Save bid (MySQL, optional Redis cache)
+//        bidService.saveBid(auctionId, playerId, bidRequest.amount(), user);
+        return null;
     }
 }

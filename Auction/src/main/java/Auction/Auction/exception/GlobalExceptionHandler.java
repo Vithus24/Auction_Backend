@@ -72,6 +72,12 @@ public class GlobalExceptionHandler {
                 HttpStatus.UNPROCESSABLE_ENTITY.value(), ex.getMessage()), HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
+    @ExceptionHandler(AuctionIsNotLiveException.class)
+    public ResponseEntity<ErrorResponse> handleAuctionIsNotLiveException(AuctionIsNotLiveException ex) {
+        return new ResponseEntity<>(new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(), ex.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(ClassCastException.class)
     public ResponseEntity<ErrorResponse> handleClassCastException(ClassCastException ex) {
         return new ResponseEntity<>(new ErrorResponse(
