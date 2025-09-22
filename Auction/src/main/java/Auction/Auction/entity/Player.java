@@ -3,15 +3,17 @@ package Auction.Auction.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "players", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"auction_id", "email"})
 })
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @ToString(exclude = {"image", "auction", "bidTeam"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Player {
@@ -47,8 +49,8 @@ public class Player {
     private Team bidTeam;
 
     // NEW
-    @Column(name = "bid_amount", precision = 19, scale = 2)
-    private BigDecimal bidAmount;
+    @Column(name = "bid_amount")
+    private Double bidAmount;
 
     @PrePersist
     public void prePersist() {

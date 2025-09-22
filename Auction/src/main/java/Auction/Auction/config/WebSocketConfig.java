@@ -1,6 +1,7 @@
 package Auction.Auction.config;
 
 import Auction.Auction.security.JwtTokenProvider;
+import Auction.Auction.security.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -11,6 +12,7 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -24,46 +26,48 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private static final Logger LOGGER = Logger.getLogger(WebSocketConfig.class.getName());
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserDetailsServiceImpl userDetailsService;
 
-    public WebSocketConfig(JwtTokenProvider jwtTokenProvider) {
+    public WebSocketConfig(JwtTokenProvider jwtTokenProvider, UserDetailsServiceImpl userDetailsService) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.userDetailsService = userDetailsService;
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // Enable simple broker for dev (broadcasts to /topic)
-        // Reason: Simple broker is in-memory, fast for local testing. For production/AWS, replace with Redis for distributed pub/sub:
-        // config.enableStompBrokerRelay("/topic").setRelayHost("redis-endpoint").setRelayPort(6379).setSystemLogin("user").setSystemPasscode("pass");
-        config.enableSimpleBroker("/topic");
-        config.setApplicationDestinationPrefixes("/app");  // Prefix for message handlers (e.g., /app/bid)
+        // For dev: SimpleBroker. In prod, consider RabbitMQ/Redis
+        config.enableSimpleBroker("/topic", "/queue");
+        config.setApplicationDestinationPrefixes("/app");
+        config.setUserDestinationPrefix("/user"); // for private messages (/user/queue/..)
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Register endpoint for clients to connect (ws://localhost:8080/ws-auction)
-        // Reason: /ws-auction is secure; clients connect here. withSockJS() provides fallback for old browsers. setAllowedOriginPatterns allows flexible origins (http/https, ports).
-        // In production, restrict to specific origins (e.g., "https://yourdomain.com") to prevent cross-site connections.
         registry.addEndpoint("/ws-auction")
-                .setAllowedOriginPatterns("*")  // Allow all for dev; change to List.of("http://localhost:3000", "https://yourdomain.com") in prod
-                .withSockJS();  // Fallback; remove if only modern browsers
+                .setAllowedOriginPatterns("*") // TODO: restrict to frontend domain in prod
+                .withSockJS();
+
+        registry.addEndpoint("/ws-auction-native")
+                .setAllowedOriginPatterns("*"); // Native WebSocket (no SockJS)
     }
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
-        // Register interceptor for inbound messages (e.g., CONNECT)
-        // Reason: Validates JWT before allowing connection/subscriptions, ensuring security at the entry point.
-        registration.interceptors(new JwtChannelInterceptor(jwtTokenProvider));
+        registration.interceptors(new JwtChannelInterceptor(jwtTokenProvider, userDetailsService));
     }
 
     /**
-     * Intercepts CONNECT frames and validates JWT from headers.
+     * Intercepts CONNECT frames, validates JWT, attaches Authentication -> Principal
      */
     private static class JwtChannelInterceptor implements ChannelInterceptor {
 
         private final JwtTokenProvider jwtTokenProvider;
+        private final UserDetailsServiceImpl userDetailsService;
 
-        public JwtChannelInterceptor(JwtTokenProvider jwtTokenProvider) {
+        public JwtChannelInterceptor(JwtTokenProvider jwtTokenProvider,
+                                     UserDetailsServiceImpl userDetailsService) {
             this.jwtTokenProvider = jwtTokenProvider;
+            this.userDetailsService = userDetailsService;
         }
 
         @Override
@@ -71,25 +75,43 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
 
             if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-                String authHeader = accessor.getFirstNativeHeader("Authorization");  // Expect "Bearer <token>"
+                LOGGER.info("WebSocket CONNECT attempt");
 
-                if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                    LOGGER.warning("Missing or invalid Authorization header");
-                    throw new IllegalArgumentException("Missing Authorization header");  // Reject connection
-                }
-
-                String token = authHeader.substring(7).trim();
-                if (!jwtTokenProvider.validateToken(token)) {
-                    LOGGER.warning("Invalid JWT token");
-                    throw new IllegalArgumentException("Invalid JWT token");  // Reject connection
+                String token = extractToken(accessor);
+                if (token == null || !jwtTokenProvider.validateToken(token)) {
+                    LOGGER.warning("Invalid or missing JWT during WebSocket connection");
+                    throw new IllegalArgumentException("Unauthorized: invalid token");
                 }
 
                 String email = jwtTokenProvider.getEmailFromToken(token);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
                 Authentication authentication = new UsernamePasswordAuthenticationToken(
-                        email, null, jwtTokenProvider.getAuthorities(token));  // Uses role from claims
-                accessor.setUser(authentication);  // Set principal for handlers
+                        userDetails, null, userDetails.getAuthorities());
+
+                accessor.setUser(authentication); // ✅ now Principal available in controllers
+                LOGGER.info("WebSocket authenticated: " + email);
             }
+
             return message;
+        }
+
+        private String extractToken(StompHeaderAccessor accessor) {
+            String authHeader = accessor.getFirstNativeHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7).trim();
+                LOGGER.info("Extracted JWT token: " + token);
+                return token;
+            }
+
+            String tokenParam = accessor.getFirstNativeHeader("token");
+            if (tokenParam != null) {
+                LOGGER.info("Extracted fallback token: " + tokenParam);
+                return tokenParam.trim();
+            }
+
+            LOGGER.warning("No token found in headers");
+            return null;
         }
     }
 }
