@@ -72,6 +72,24 @@ public class GlobalExceptionHandler {
                 HttpStatus.UNPROCESSABLE_ENTITY.value(), ex.getMessage()), HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
+    @ExceptionHandler(AuctionIsNotLiveException.class)
+    public ResponseEntity<ErrorResponse> handleAuctionIsNotLiveException(AuctionIsNotLiveException ex) {
+        return new ResponseEntity<>(new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(), ex.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(PlayerNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePlayerNotFoundException(PlayerNotFoundException ex) {
+        return new ResponseEntity<>(new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(), ex.getMessage()), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(PlayerNotAvailableException.class)
+    public ResponseEntity<ErrorResponse> handlePlayerNotAvailableException(PlayerNotAvailableException ex) {
+        return new ResponseEntity<>(new ErrorResponse(
+                HttpStatus.CONFLICT.value(), ex.getMessage()), HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(ClassCastException.class)
     public ResponseEntity<ErrorResponse> handleClassCastException(ClassCastException ex) {
         return new ResponseEntity<>(new ErrorResponse(

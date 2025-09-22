@@ -7,9 +7,13 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 
 @Component
@@ -46,5 +50,19 @@ public class JwtTokenProvider {
     public String getEmailFromToken(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token).getBody();
         return claims.getSubject();
+    }
+
+    public Collection<? extends GrantedAuthority> getAuthorities(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        String role = claims.get("role", String.class);
+        if (role != null) {
+            return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
+        }
+        return Collections.emptyList();
     }
 }

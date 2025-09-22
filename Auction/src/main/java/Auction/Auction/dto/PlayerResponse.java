@@ -3,7 +3,6 @@ package Auction.Auction.dto;
 import Auction.Auction.entity.Player;
 import Auction.Auction.entity.PlayerStatus;
 
-import java.math.BigDecimal;
 import java.util.Base64;
 
 public record PlayerResponse(
@@ -25,11 +24,12 @@ public record PlayerResponse(
         String playerStatus,   // enum as string
         Long bidTeamId,        // null if no team
         String bidTeamName,    // null if team has no name
-        BigDecimal bidAmount
+        Double bidAmount
 ) {
     private static String detectImageType(byte[] imageData) {
         if (imageData == null || imageData.length < 8) return "image/jpeg";
-        if (imageData[0] == (byte) 0xFF && imageData[1] == (byte) 0xD8 && imageData[2] == (byte) 0xFF) return "image/jpeg";
+        if (imageData[0] == (byte) 0xFF && imageData[1] == (byte) 0xD8 && imageData[2] == (byte) 0xFF)
+            return "image/jpeg";
         if (imageData[0] == (byte) 0x89 && imageData[1] == (byte) 0x50 &&
                 imageData[2] == (byte) 0x4E && imageData[3] == (byte) 0x47 &&
                 imageData[4] == (byte) 0x0D && imageData[5] == (byte) 0x0A &&

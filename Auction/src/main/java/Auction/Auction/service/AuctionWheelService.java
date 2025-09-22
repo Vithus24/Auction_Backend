@@ -27,6 +27,7 @@ public class AuctionWheelService {
      * Selects a random player for bidding based on the specified round
      * First round: Select from all players
      * Subsequent rounds: Select from unsold players only
+     *
      * @param round The bidding round
      * @return Selected Player or null if no players available
      */
@@ -50,6 +51,7 @@ public class AuctionWheelService {
      * Get available players based on the specified round
      * First round: All players
      * Subsequent rounds: Unsold players
+     *
      * @param round The bidding round
      * @return List of available players
      */

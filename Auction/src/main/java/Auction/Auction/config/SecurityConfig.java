@@ -25,7 +25,6 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
-
     private final UserDetailsServiceImpl userDetailsServiceImpl;
 
     public SecurityConfig(JwtTokenProvider jwtTokenProvider, UserDetailsServiceImpl userDetailsServiceImpl) {
@@ -36,11 +35,20 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(withDefaults()) // ✅ Tell Spring Security to use your CorsConfig
+                .cors(withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        // WebSocket endpoints - allow connection but authentication handled by interceptor
+                        .requestMatchers("/ws-auction/**", "/ws-auction-native/**").permitAll()
+
+                        // Public endpoints
                         .requestMatchers("/login", "/register", "/error", "/verify").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ✅ allow preflight
+                        .requestMatchers("/api/bids/test").permitAll() // For testing
+
+                        // CORS preflight
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // All other requests require authentication
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -50,7 +58,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {

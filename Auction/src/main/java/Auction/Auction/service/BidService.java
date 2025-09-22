@@ -1,14 +1,9 @@
 package Auction.Auction.service;
 
-import Auction.Auction.entity.Bid;
-import Auction.Auction.entity.Player;
-import Auction.Auction.entity.PlayerAllocation;
-import Auction.Auction.entity.Team;
-import Auction.Auction.repository.BidRepository;
-import Auction.Auction.repository.PlayerAllocationRepository;
-import Auction.Auction.repository.PlayerRepository;
-import Auction.Auction.repository.TeamRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import Auction.Auction.dto.BidResponse;
+import Auction.Auction.entity.*;
+import Auction.Auction.exception.*;
+import Auction.Auction.repository.*;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -18,20 +13,34 @@ import java.util.Optional;
 
 @Service
 public class BidService {
-    @Autowired
-    private BidRepository bidRepository;
-    @Autowired
-    private PlayerRepository playerRepository;
-    @Autowired
-    private TeamRepository teamRepository;
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
-    @Autowired
-    private AuctionWheelService wheelService;
-    @Autowired
-    private PlayerAllocationRepository allocationRepository;
+    private final BidRepository bidRepository;
+
+    private final PlayerRepository playerRepository;
+
+    private final TeamRepository teamRepository;
+
+    private final SimpMessagingTemplate messagingTemplate;
+
+    private final AuctionWheelService wheelService;
+
+    private final PlayerAllocationRepository allocationRepository;
+
+    private final AuctionRepository auctionRepository;
+    private final UserRepository userRepository;
 
     private int currentRound = 0;
+
+    public BidService(BidRepository bidRepository, PlayerRepository playerRepository, TeamRepository teamRepository, SimpMessagingTemplate messagingTemplate, AuctionWheelService wheelService, PlayerAllocationRepository allocationRepository, AuctionRepository auctionRepository, UserRepository userRepository) {
+        this.bidRepository = bidRepository;
+        this.playerRepository = playerRepository;
+        this.teamRepository = teamRepository;
+        this.messagingTemplate = messagingTemplate;
+        this.wheelService = wheelService;
+        this.allocationRepository = allocationRepository;
+        this.auctionRepository = auctionRepository;
+        this.userRepository = userRepository;
+    }
+
 
     public List<Bid> findAll() {
         return bidRepository.findAll();
@@ -83,6 +92,7 @@ public class BidService {
             throw new RuntimeException("Bid not found with id: " + id);
         }
     }
+
     public void delete(Long id) {
         bidRepository.deleteById(id);
     }
@@ -177,5 +187,61 @@ public class BidService {
 
     public List<Player> getAvailablePlayersForWheel() {
         return wheelService.getAvailablePlayers(currentRound + 1);
+    }
+
+    public BidResponse saveBid(Long auctionId, Long playerId, Long userId) {
+
+        Optional<Auction> optionalAuction = auctionRepository.findById(auctionId);
+        Optional<Player> optionalPlayer = playerRepository.findById(playerId);
+        Optional<User> optionalUser = userRepository.findById(userId);
+
+        if (optionalUser.isEmpty()) {
+            throw new UserNotFoundException("User not found.");
+        }
+
+        if (optionalUser.get().getRole() != Role.TEAM_OWNER) {
+            throw new UserNotTeamOwnerException("Only TEAM_OWNER can place bids");
+        }
+
+        User teamOwner = optionalUser.get();
+
+        if (optionalAuction.isEmpty()) {
+            throw new AuctionNotFoundException("Auction not found.");
+        }
+
+        if (!optionalAuction.get().getStatus().toString().equals("LIVE")) {
+            throw new AuctionIsNotLiveException("This auction not in live.");
+        }
+
+        Auction auction = optionalAuction.get();
+
+        if (optionalPlayer.isEmpty()) {
+            throw new PlayerNotFoundException("Player not found.");
+        }
+
+        if (!optionalPlayer.get().getPlayerStatus().toString().equals("AVAILABLE")) {
+            throw new PlayerNotAvailableException("This player not available.");
+        }
+
+        Player player = optionalPlayer.get();
+
+        Team team = teamRepository.findByOwner(teamOwner).orElseThrow(() -> new UserNotFoundException("User not found!"));
+        player.setBidTeam(team);
+        String biddingTeamName = team.getName();
+
+        Double bidAmount;
+
+        if (player.getBidAmount() == null || player.getBidAmount().equals(0.0)) {
+            bidAmount = auction.getMinimumBid();
+        } else {
+            bidAmount = player.getBidAmount();
+        }
+
+        Double bidIncreaseBy = auction.getBidIncreaseBy();
+
+        double currentBidAmount = bidAmount + bidIncreaseBy;
+        player.setBidAmount(currentBidAmount);
+        playerRepository.save(player);
+        return new BidResponse(currentBidAmount, biddingTeamName);
     }
 }

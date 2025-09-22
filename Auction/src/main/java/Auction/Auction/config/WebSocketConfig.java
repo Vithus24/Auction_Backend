@@ -1,75 +1,117 @@
 package Auction.Auction.config;
 
-
 import Auction.Auction.security.JwtTokenProvider;
+import Auction.Auction.security.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.server.ServerHttpRequest;
-import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.messaging.simp.stomp.StompCommand;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
-import org.springframework.web.socket.server.HandshakeInterceptor;
 
-import java.util.Map;
+import java.util.logging.Logger;
 
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    private final JwtTokenProvider jwtTokenProvider;
+    private static final Logger LOGGER = Logger.getLogger(WebSocketConfig.class.getName());
 
-    public WebSocketConfig(JwtTokenProvider jwtTokenProvider) {
+    private final JwtTokenProvider jwtTokenProvider;
+    private final UserDetailsServiceImpl userDetailsService;
+
+    public WebSocketConfig(JwtTokenProvider jwtTokenProvider, UserDetailsServiceImpl userDetailsService) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.userDetailsService = userDetailsService;
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic"); // Clients subscribe here
-        config.setApplicationDestinationPrefixes("/app"); // Clients send messages here
+        // For dev: SimpleBroker. In prod, consider RabbitMQ/Redis
+        config.enableSimpleBroker("/topic", "/queue");
+        config.setApplicationDestinationPrefixes("/app");
+        config.setUserDestinationPrefix("/user"); // for private messages (/user/queue/..)
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws-auction")
-                .setAllowedOrigins("*")
-                .addInterceptors(new JwtHandshakeInterceptor(jwtTokenProvider))
+                .setAllowedOriginPatterns("*") // TODO: restrict to frontend domain in prod
                 .withSockJS();
+
+        registry.addEndpoint("/ws-auction-native")
+                .setAllowedOriginPatterns("*"); // Native WebSocket (no SockJS)
     }
 
-    private static class JwtHandshakeInterceptor implements HandshakeInterceptor {
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(new JwtChannelInterceptor(jwtTokenProvider, userDetailsService));
+    }
+
+    /**
+     * Intercepts CONNECT frames, validates JWT, attaches Authentication -> Principal
+     */
+    private static class JwtChannelInterceptor implements ChannelInterceptor {
 
         private final JwtTokenProvider jwtTokenProvider;
+        private final UserDetailsServiceImpl userDetailsService;
 
-        public JwtHandshakeInterceptor(JwtTokenProvider jwtTokenProvider) {
+        public JwtChannelInterceptor(JwtTokenProvider jwtTokenProvider,
+                                     UserDetailsServiceImpl userDetailsService) {
             this.jwtTokenProvider = jwtTokenProvider;
+            this.userDetailsService = userDetailsService;
         }
 
         @Override
-        public boolean beforeHandshake(ServerHttpRequest request,
-                                       ServerHttpResponse response,
-                                       WebSocketHandler wsHandler,
-                                       Map<String, Object> attributes) {
-            String query = request.getURI().getQuery();
-            if (query != null && query.contains("access_token=")) {
-                String token = query.split("access_token=")[1];
-                if (jwtTokenProvider.validateToken(token)) {
-                    String username = jwtTokenProvider.getEmailFromToken(token);
-                    attributes.put("username", username); // Store user info in WS session
-                    return true;
+        public Message<?> preSend(Message<?> message, MessageChannel channel) {
+            StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
+
+            if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+                LOGGER.info("WebSocket CONNECT attempt");
+
+                String token = extractToken(accessor);
+                if (token == null || !jwtTokenProvider.validateToken(token)) {
+                    LOGGER.warning("Invalid or missing JWT during WebSocket connection");
+                    throw new IllegalArgumentException("Unauthorized: invalid token");
                 }
+
+                String email = jwtTokenProvider.getEmailFromToken(token);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
+                Authentication authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+
+                accessor.setUser(authentication); // ✅ now Principal available in controllers
+                LOGGER.info("WebSocket authenticated: " + email);
             }
-            response.setStatusCode(org.springframework.http.HttpStatus.FORBIDDEN);
-            return false;
+
+            return message;
         }
 
-        @Override
-        public void afterHandshake(ServerHttpRequest request,
-                                   ServerHttpResponse response,
-                                   WebSocketHandler wsHandler,
-                                   Exception exception) {
-            // No-op
+        private String extractToken(StompHeaderAccessor accessor) {
+            String authHeader = accessor.getFirstNativeHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7).trim();
+                LOGGER.info("Extracted JWT token: " + token);
+                return token;
+            }
+
+            String tokenParam = accessor.getFirstNativeHeader("token");
+            if (tokenParam != null) {
+                LOGGER.info("Extracted fallback token: " + tokenParam);
+                return tokenParam.trim();
+            }
+
+            LOGGER.warning("No token found in headers");
+            return null;
         }
     }
 }
