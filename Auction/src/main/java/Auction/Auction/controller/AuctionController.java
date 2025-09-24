@@ -7,6 +7,8 @@ import Auction.Auction.entity.Bid;
 import Auction.Auction.exception.CantAddAuctionException;
 import Auction.Auction.service.AuctionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -55,12 +57,20 @@ public class AuctionController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AuctionResponse> createAuction(
             @RequestPart("auction") String auctionRequestJson,
-            @RequestPart("image") MultipartFile imageFile
+            @RequestPart(value = "image", required = false) MultipartFile imageFile
 
     ) throws IOException, CantAddAuctionException {
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         AuctionRequest auctionRequest = objectMapper.readValue(auctionRequestJson, AuctionRequest.class);
-        byte[] imageBytes = imageFile.getBytes();
+
+
+//     byte[] imageBytes = imageFile.getBytes();
+        byte[] imageBytes = null;
+        if (imageFile != null && !imageFile.isEmpty()) {
+            imageBytes = imageFile.getBytes();
+        }
         return ResponseEntity.ok(auctionService.save(auctionRequest, imageBytes));
     }
 
@@ -90,7 +100,7 @@ public class AuctionController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/{id}/image")
+    @GetMapping("/image/{id}")
     public ResponseEntity<byte[]> getAuctionImage(@PathVariable Long id) {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, "image/png")

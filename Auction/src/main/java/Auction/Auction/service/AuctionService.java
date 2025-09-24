@@ -59,9 +59,9 @@ public class AuctionService {
             throw new UserNotFoundException("User not found!");
         }
 
-        if (!optionalAdmin.get().getRole().toString().equals("ADMIN")) {
-            throw new UserNotAdminException("This user not ADMIN!");
-        }
+//        if (!optionalAdmin.get().getRole().toString().equals("ADMIN")) {
+//            throw new UserNotAdminException("This user not ADMIN!");
+//        }
         User admin = optionalAdmin.get();
 
 

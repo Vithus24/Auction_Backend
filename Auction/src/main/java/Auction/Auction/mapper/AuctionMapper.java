@@ -21,7 +21,7 @@ public class AuctionMapper {
                 auction.getPointsPerTeam(),
                 auction.getPlayerPerTeam(),
                 auction.getStatus(),
-                "/auction/" + auction.getId() + "/image"
+                "/auctions/image/"+ auction.getId()
 
         );
     }

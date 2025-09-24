@@ -42,7 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/ws-auction/**", "/ws-auction-native/**").permitAll()
 
                         // Public endpoints
-                        .requestMatchers("/login", "/register", "/error", "/verify").permitAll()
+                        .requestMatchers("/login", "/register", "/error", "/verify","/auctions/image/**").permitAll()
                         .requestMatchers("/api/bids/test").permitAll() // For testing
 
                         // CORS preflight

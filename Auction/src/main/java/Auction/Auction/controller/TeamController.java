@@ -37,7 +37,7 @@ public class TeamController {
     }
 
     @PostMapping(consumes = {"multipart/form-data"})
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('TEAM_OWNER')")
     public ResponseEntity<TeamResponse> createTeam(
             @RequestPart("team") String teamRequestJson,
             @RequestPart("image") MultipartFile imageFile
@@ -49,7 +49,7 @@ public class TeamController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('TEAM_OWNER')")
     public ResponseEntity<TeamResponse> updateTeam(
             @PathVariable Long id,
             @RequestPart("team") String teamRequestJson,
@@ -61,7 +61,7 @@ public class TeamController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('TEAM_OWNER')")
     public ResponseEntity<Void> deleteTeam(@PathVariable Long id) {
         teamService.delete(id);
         return ResponseEntity.noContent().build();
