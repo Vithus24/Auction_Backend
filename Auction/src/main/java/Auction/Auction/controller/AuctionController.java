@@ -82,6 +82,8 @@ public class AuctionController {
             @RequestPart(value = "image", required = false) MultipartFile imageFile
     ) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         AuctionRequest auctionRequest = objectMapper.readValue(auctionRequestJson, AuctionRequest.class);
 
         byte[] imageBytes = null;
