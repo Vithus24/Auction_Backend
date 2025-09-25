@@ -34,3 +34,4 @@ public class Team {
     @Column(name = "image", columnDefinition = "LONGBLOB")
     private byte[] image;
 }
+

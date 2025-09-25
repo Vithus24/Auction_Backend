@@ -37,31 +37,37 @@ public class TeamController {
     }
 
     @PostMapping(consumes = {"multipart/form-data"})
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('TEAM_OWNER')")
     public ResponseEntity<TeamResponse> createTeam(
             @RequestPart("team") String teamRequestJson,
-            @RequestPart("image") MultipartFile imageFile
+             @RequestPart(value = "image", required = false) MultipartFile imageFile
     ) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         TeamRequest teamRequest = objectMapper.readValue(teamRequestJson, TeamRequest.class);
-        byte[] imageBytes = imageFile.getBytes();
+//        byte[] imageBytes = imageFile.getBytes();
+        byte[] imageBytes = null;
+        if (imageFile != null && !imageFile.isEmpty()) {
+            imageBytes = imageFile.getBytes();
+        }
         return ResponseEntity.ok(teamService.save(teamRequest, imageBytes));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('TEAM_OWNER')")
     public ResponseEntity<TeamResponse> updateTeam(
             @PathVariable Long id,
             @RequestPart("team") String teamRequestJson,
-            @RequestPart("image") MultipartFile imageFile
+//            @RequestPart("image") MultipartFile imageFile
+            @RequestPart(value = "image", required = false) MultipartFile imageFile
     ) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         TeamRequest teamRequest = objectMapper.readValue(teamRequestJson, TeamRequest.class);
+
         return ResponseEntity.ok(teamService.update(id, teamRequest, imageFile));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('TEAM_OWNER')")
     public ResponseEntity<Void> deleteTeam(@PathVariable Long id) {
         teamService.delete(id);
         return ResponseEntity.noContent().build();
