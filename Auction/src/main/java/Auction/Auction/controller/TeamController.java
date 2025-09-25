@@ -67,7 +67,7 @@ public class TeamController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/{id}/image")
+    @GetMapping("/image/{id}")
     public ResponseEntity<byte[]> getTeamImage(@PathVariable Long id) {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, "image/png")
