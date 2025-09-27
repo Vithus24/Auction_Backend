@@ -10,11 +10,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-public class DynamicScheduler {
+public class DynamicSchedulerService {
 
     private final AuctionRepository auctionRepository;
 
-    public DynamicScheduler(AuctionRepository auctionRepository) {
+    public DynamicSchedulerService(AuctionRepository auctionRepository) {
         this.auctionRepository = auctionRepository;
     }
 
