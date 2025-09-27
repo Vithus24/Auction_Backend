@@ -90,6 +90,13 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT.value(), ex.getMessage()), HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(TeamOwnerAndAuctionException.class)
+    public ResponseEntity<ErrorResponse> handleTeamOwnerAndAuctionException(TeamOwnerAndAuctionException ex) {
+        return new ResponseEntity<>(new ErrorResponse(
+                HttpStatus.CONFLICT.value(), ex.getMessage()), HttpStatus.CONFLICT);
+    }
+
+
     @ExceptionHandler(ClassCastException.class)
     public ResponseEntity<ErrorResponse> handleClassCastException(ClassCastException ex) {
         return new ResponseEntity<>(new ErrorResponse(
