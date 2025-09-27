@@ -225,7 +225,7 @@ public class BidService {
 
         Player player = optionalPlayer.get();
 
-        Team team = teamRepository.findByOwner(teamOwner).orElseThrow(() -> new UserNotFoundException("User not found!"));
+        Team team = teamRepository.findByOwnerAndAuctionIs(teamOwner, auction).orElseThrow(() -> new TeamOwnerAndAuctionException("No team found for this team owner in the specified auction."));
         player.setBidTeam(team);
         String biddingTeamName = team.getName();
 
