@@ -16,7 +16,7 @@ public class TeamMapper {
         return new TeamResponse(
                 team.getId(),
                 team.getName(),
-                team.getBudget(),
+                team.getCurrentTotalPoints(),
                 team.getOwner().getId(),
                 team.getOwner().getEmail(),
                 team.getAuction().getId(),
@@ -31,7 +31,7 @@ public class TeamMapper {
     public Team mapToEntity(TeamRequest teamRequest, User owner, Auction auction, byte[] imageBytes) {
         Team team = new Team();
         team.setName(teamRequest.name());
-        team.setBudget(team.getBudget());
+        team.setCurrentTotalPoints(team.getCurrentTotalPoints());
         team.setOwner(owner);
         team.setAuction(auction);
         team.setImage(imageBytes);

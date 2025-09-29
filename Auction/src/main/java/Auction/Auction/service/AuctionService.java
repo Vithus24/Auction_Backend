@@ -3,7 +3,10 @@ package Auction.Auction.service;
 import Auction.Auction.dto.AuctionRequest;
 import Auction.Auction.dto.AuctionResponse;
 import Auction.Auction.entity.*;
-import Auction.Auction.exception.*;
+import Auction.Auction.exception.AuctionDuplicationException;
+import Auction.Auction.exception.AuctionNotFoundException;
+import Auction.Auction.exception.CantAddAuctionException;
+import Auction.Auction.exception.UserNotFoundException;
 import Auction.Auction.mapper.AuctionMapper;
 import Auction.Auction.repository.*;
 import jakarta.transaction.Transactional;
@@ -108,7 +111,7 @@ public class AuctionService {
             existingAuction.setAuctionDate(auctionRequest.auctionDate());
         }
         if (auctionRequest.pointsPerTeam() != null && auctionRequest.pointsPerTeam() > 0) {
-            existingAuction.setPointsPerTeam(auctionRequest.pointsPerTeam());
+            existingAuction.setInitialPointsPerTeam(auctionRequest.pointsPerTeam());
         }
         if (auctionRequest.typeOfSport() != null && !auctionRequest.typeOfSport().isBlank()) {
             existingAuction.setTypeOfSport(auctionRequest.typeOfSport());
@@ -159,7 +162,7 @@ public class AuctionService {
                 .orElseThrow(() -> new RuntimeException("Player not found"));
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException("Team not found"));
-        if (team.getBudget() < amount || player.isSold()) {
+        if (team.getCurrentTotalPoints() < amount || player.isSold()) {
             throw new RuntimeException("Invalid bid: Insufficient budget or player already sold");
         }
         Bid bid = new Bid();
@@ -186,7 +189,7 @@ public class AuctionService {
                 .max((b1, b2) -> Double.compare(b1.getBidAmount(), b2.getBidAmount()))
                 .get();
         Team winningTeam = highestBid.getTeam();
-        winningTeam.setBudget(winningTeam.getBudget() - highestBid.getBidAmount());
+        winningTeam.setCurrentTotalPoints(winningTeam.getCurrentTotalPoints() - highestBid.getBidAmount());
         teamRepository.save(winningTeam);
 
         PlayerAllocation allocation = new PlayerAllocation();

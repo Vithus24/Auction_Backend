@@ -49,10 +49,10 @@ public record PlayerResponse(
                 player.getId(),
                 player.getFirstname(),
                 player.getLastname(),
-                player.getMobileno(),
+                player.getMobileNo(),
                 player.getEmail(),
                 player.getDob() != null ? player.getDob().toString() : null,
-                player.getTshirtSize(),
+                player.getTShirtSize(),
                 player.getBottomSize(),
                 player.getTypeOfSportCategory(),
                 player.isSold(),
@@ -64,9 +64,9 @@ public record PlayerResponse(
 
                 // NEW
                 player.getPlayerStatus() != null ? player.getPlayerStatus().name() : PlayerStatus.AVAILABLE.name(),
-                player.getBidTeam() != null ? player.getBidTeam().getId() : null,
-                player.getBidTeam() != null ? player.getBidTeam().getName() : null, // assumes Team#getName()
-                player.getBidAmount()
+                player.getCurrentBidTeam() != null ? player.getCurrentBidTeam().getId() : null,
+                player.getCurrentBidTeam() != null ? player.getCurrentBidTeam().getName() : null, // assumes Team#getName()
+                player.getCurrentBidAmount()
         );
     }
 }

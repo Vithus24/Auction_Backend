@@ -56,7 +56,7 @@ public class BidService {
                 .orElseThrow(() -> new RuntimeException("Player not found"));
         Team team = teamRepository.findById(bid.getTeam().getId())
                 .orElseThrow(() -> new RuntimeException("Team not found"));
-        if (team.getBudget() < bid.getBidAmount() || player.isSold()) {
+        if (team.getCurrentTotalPoints() < bid.getBidAmount() || player.isSold()) {
             throw new RuntimeException("Invalid bid: Insufficient budget or player already sold");
         }
 
@@ -77,7 +77,7 @@ public class BidService {
                     .orElseThrow(() -> new RuntimeException("Player not found"));
             Team team = teamRepository.findById(updatedBid.getTeam().getId())
                     .orElseThrow(() -> new RuntimeException("Team not found"));
-            if (team.getBudget() < updatedBid.getBidAmount() || player.isSold()) {
+            if (team.getCurrentTotalPoints() < updatedBid.getBidAmount() || player.isSold()) {
                 throw new RuntimeException("Invalid bid update: Insufficient budget or player already sold");
             }
             bid.setPlayer(updatedBid.getPlayer());
@@ -105,7 +105,7 @@ public class BidService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException("Team not found"));
 
-        if (team.getBudget() < amount) {
+        if (team.getCurrentTotalPoints() < amount) {
             throw new RuntimeException("Invalid bid: Insufficient budget");
         }
         if (player.isSold()) {
@@ -150,7 +150,7 @@ public class BidService {
         double finalPrice = highestBid.getBidAmount();
 
         // Deduct budget
-        winningTeam.setBudget(winningTeam.getBudget() - finalPrice);
+        winningTeam.setCurrentTotalPoints(winningTeam.getCurrentTotalPoints() - finalPrice);
         teamRepository.save(winningTeam);
 
         // Save allocation
@@ -226,21 +226,21 @@ public class BidService {
         Player player = optionalPlayer.get();
 
         Team team = teamRepository.findByOwnerAndAuctionIs(teamOwner, auction).orElseThrow(() -> new TeamOwnerAndAuctionException("No team found for this team owner in the specified auction."));
-        player.setBidTeam(team);
+        player.setCurrentBidTeam(team);
         String biddingTeamName = team.getName();
 
         Double bidAmount;
 
-        if (player.getBidAmount() == null || player.getBidAmount().equals(0.0)) {
+        if (player.getCurrentBidAmount() == null || player.getCurrentBidAmount().equals(0.0)) {
             bidAmount = auction.getMinimumBid();
         } else {
-            bidAmount = player.getBidAmount();
+            bidAmount = player.getCurrentBidAmount();
         }
 
         Double bidIncreaseBy = auction.getBidIncreaseBy();
 
         double currentBidAmount = bidAmount + bidIncreaseBy;
-        player.setBidAmount(currentBidAmount);
+        player.setCurrentBidAmount(currentBidAmount);
         playerRepository.save(player);
         return new BidResponse(currentBidAmount, biddingTeamName);
     }
