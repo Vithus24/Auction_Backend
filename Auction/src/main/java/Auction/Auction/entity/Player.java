@@ -24,10 +24,10 @@ public class Player {
 
     private String firstname;
     private String lastname;
-    private String mobileno;
+    private String mobileNo;
     private String email;
     private LocalDate dob;
-    private String tshirtSize;
+    private String tShirtSize;
     private String bottomSize;
     private String typeOfSportCategory;
     private boolean sold;
@@ -39,18 +39,19 @@ public class Player {
     @Lob
     @Column(name = "image", columnDefinition = "LONGBLOB")
     private byte[] image;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "player_status", nullable = false)
     private PlayerStatus playerStatus;
 
-
     @ManyToOne
-    @JoinColumn(name = "bid_team_id")
-    private Team bidTeam;
+    @JoinColumn(name = "current_bid_team_id")
+    private Team currentBidTeam;
 
     // NEW
-    @Column(name = "bid_amount")
-    private Double bidAmount;
+    @Column(name = "current_bid_amount")
+    private Double currentBidAmount;
+
 
     @PrePersist
     public void prePersist() {

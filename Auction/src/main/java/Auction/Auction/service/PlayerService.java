@@ -84,17 +84,17 @@ public class PlayerService {
         Player player = existingPlayer.get();
         player.setFirstname(updatedPlayer.getFirstname());
         player.setLastname(updatedPlayer.getLastname());
-        player.setMobileno(updatedPlayer.getMobileno());
+        player.setMobileNo(updatedPlayer.getMobileNo());
         player.setEmail(updatedPlayer.getEmail());
         player.setDob(updatedPlayer.getDob());
-        player.setTshirtSize(updatedPlayer.getTshirtSize());
+        player.setTShirtSize(updatedPlayer.getTShirtSize());
         player.setBottomSize(updatedPlayer.getBottomSize());
         player.setTypeOfSportCategory(updatedPlayer.getTypeOfSportCategory());
         player.setAuction(updatedPlayer.getAuction());
 
         // NEW fields
-        player.setBidTeam(updatedPlayer.getBidTeam());
-        player.setBidAmount(updatedPlayer.getBidAmount());
+        player.setCurrentBidTeam(updatedPlayer.getCurrentBidTeam());
+        player.setCurrentBidAmount(updatedPlayer.getCurrentBidAmount());
 
         // Status: if provided, use it; otherwise keep existing
         if (updatedPlayer.getPlayerStatus() != null) {

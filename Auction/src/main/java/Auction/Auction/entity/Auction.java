@@ -36,7 +36,7 @@ public class Auction {
     @Column(nullable = false)
     private Double minimumBid;
     @Column(nullable = false)
-    private Double pointsPerTeam;
+    private Double initialPointsPerTeam;
     @Column(nullable = false)
     private Integer playerPerTeam;
     @Column(nullable = false)
@@ -51,9 +51,8 @@ public class Auction {
     @JoinColumn(name = "admin_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User admin;
+
     @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Team> teams = new ArrayList<>();
-
-
 }
