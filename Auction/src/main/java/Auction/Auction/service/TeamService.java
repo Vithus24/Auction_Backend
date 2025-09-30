@@ -47,6 +47,15 @@ public class TeamService {
         return teamMapper.mapToTeamResponse(team);
     }
 
+    // Get team list filtered by auctionId
+    public List<TeamResponse> getTeamsByAuctionId(Long auctionId) {
+        List<Team> teams = teamRepository.findByAuctionId(auctionId);
+        if (teams.isEmpty()) {
+            throw new TeamNotFoundException("No teams found for auction id: " + auctionId);
+        }
+        return teamMapper.mapToTeamResponseList(teams);
+    }
+
     @Transactional
     public TeamResponse save(TeamRequest teamRequest, byte[] imageBytes) {
         Optional<User> optionalOwner = userRepository.findById(teamRequest.ownerId());

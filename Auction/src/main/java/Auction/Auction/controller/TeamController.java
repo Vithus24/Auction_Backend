@@ -36,6 +36,12 @@ public class TeamController {
         return ResponseEntity.ok(teamService.getTeamById(id));
     }
 
+    // Get teams by auctionId
+    @GetMapping("/auction/{auctionId}")
+    public ResponseEntity<List<TeamResponse>> getTeamsByAuction(@PathVariable Long auctionId) {
+        return ResponseEntity.ok(teamService.getTeamsByAuctionId(auctionId));
+    }
+
     @PostMapping(consumes = {"multipart/form-data"})
     @PreAuthorize("hasRole('TEAM_OWNER')")
     public ResponseEntity<TeamResponse> createTeam(

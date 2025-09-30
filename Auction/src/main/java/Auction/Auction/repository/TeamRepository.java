@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TeamRepository extends JpaRepository<Team, Long> {
@@ -14,4 +15,6 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     Optional<Team> findByAuctionIdAndName(@Param("auctionId") Long auctionId, @Param("name") String name);
 
     Optional<Team> findByOwnerAndAuctionIs(User owner, Auction auction);
+
+    List<Team> findByAuctionId(Long auctionId);
 }
