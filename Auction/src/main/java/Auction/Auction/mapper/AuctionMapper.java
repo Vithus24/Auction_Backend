@@ -18,10 +18,10 @@ public class AuctionMapper {
                 auction.getTypeOfSport(),
                 auction.getBidIncreaseBy(),
                 auction.getMinimumBid(),
-                auction.getPointsPerTeam(),
+                auction.getInitialPointsPerTeam(),
                 auction.getPlayerPerTeam(),
                 auction.getStatus(),
-                "/auctions/image/"+ auction.getId()
+                "/auctions/image/" + auction.getId()
 
         );
     }
@@ -38,7 +38,7 @@ public class AuctionMapper {
         auction.setAuctionDate(auctionRequest.auctionDate());
         auction.setStatus(auctionRequest.status());
         auction.setMinimumBid(auctionRequest.minimumBid());
-        auction.setPointsPerTeam(auctionRequest.pointsPerTeam());
+        auction.setInitialPointsPerTeam(auctionRequest.pointsPerTeam());
         auction.setPlayerPerTeam(auctionRequest.playerPerTeam());
         auction.setTypeOfSport(auctionRequest.typeOfSport());
         auction.setBidIncreaseBy(auctionRequest.bidIncreaseBy());

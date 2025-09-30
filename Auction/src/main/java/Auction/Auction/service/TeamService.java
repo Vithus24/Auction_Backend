@@ -87,7 +87,7 @@ public class TeamService {
             existingTeam.setName(teamRequest.name());
         }
         if (teamRequest.budget() > 0) {
-            existingTeam.setBudget(teamRequest.budget());
+            existingTeam.setCurrentTotalPoints(teamRequest.budget());
         }
         if (teamRequest.ownerId() != null) {
             User owner = userRepository.findById(teamRequest.ownerId())

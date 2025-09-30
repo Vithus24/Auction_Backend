@@ -21,15 +21,15 @@ public class Team {
     @Column(nullable = false)
     private String name;
     @Column(nullable = false)
-    private double budget;
+    private Double currentTotalPoints;
+    @Column(nullable = false)
+    private Double currentMaxAllowedPointsPerPlayer;
     @ManyToOne
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
     @ManyToOne
     @JoinColumn(name = "auction_id", nullable = false)
     private Auction auction;
-
-
     @Lob
     @Column(name = "image", columnDefinition = "LONGBLOB")
     private byte[] image;
