@@ -31,7 +31,20 @@ public class TeamMapper {
     public Team mapToEntity(TeamRequest teamRequest, User owner, Auction auction, byte[] imageBytes) {
         Team team = new Team();
         team.setName(teamRequest.name());
-        team.setCurrentTotalPoints(team.getCurrentTotalPoints());
+
+        Double currentTotalPoints = auction.getInitialPointsPerTeam();
+        Double bidIncreaseBy = auction.getBidIncreaseBy();
+        Integer playerPerTeam = auction.getPlayerPerTeam();
+        Double minimumBid = auction.getMinimumBid();
+
+        Integer currentPlayerCount = 0;
+
+        // When we create team initially, this algorithm is work fine.
+        Double currentMaxAllowedPointsPerPlayer = currentTotalPoints - ((minimumBid + bidIncreaseBy) * (playerPerTeam - 1));
+
+        team.setCurrentTotalPoints(currentTotalPoints);
+        team.setCurrentMaxAllowedPointsPerPlayer(currentMaxAllowedPointsPerPlayer);
+        team.setCurrentPlayerCount(currentPlayerCount);
         team.setOwner(owner);
         team.setAuction(auction);
         team.setImage(imageBytes);
