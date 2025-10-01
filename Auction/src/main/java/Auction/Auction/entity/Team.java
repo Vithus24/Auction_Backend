@@ -24,6 +24,8 @@ public class Team {
     private Double currentTotalPoints;
     @Column(nullable = false)
     private Double currentMaxAllowedPointsPerPlayer;
+    @Column(nullable = false)
+    private Integer currentPlayerCount;
     @ManyToOne
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;

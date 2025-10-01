@@ -10,11 +10,11 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 
 @Controller
-public class BidWebSocketController {
+public class LiveBidController {
 
     private final BidService bidService;
 
-    public BidWebSocketController(BidService bidService) {
+    public LiveBidController(BidService bidService) {
         this.bidService = bidService;
     }
 
@@ -23,7 +23,7 @@ public class BidWebSocketController {
     public BidResponse handleBid(@DestinationVariable Long auctionId,
                                  @DestinationVariable Long playerId,
                                  @Payload BidRequest bidRequest) {
-        Long userId = bidRequest.userId(); // comes from frontend
+        Long userId = bidRequest.userId();
         return bidService.saveBid(auctionId, playerId, userId);
     }
 }

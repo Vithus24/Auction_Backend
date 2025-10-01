@@ -48,6 +48,18 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT.value(), ex.getMessage()), HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(PlayerBidLimitException.class)
+    public ResponseEntity<ErrorResponse> handlePlayerBidLimitException(PlayerBidLimitException ex) {
+        return new ResponseEntity<>(new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(), ex.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(PlayerAlreadySoldException.class)
+    public ResponseEntity<ErrorResponse> handlePlayerAlreadySoldException(PlayerAlreadySoldException ex) {
+        return new ResponseEntity<>(new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(), ex.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(AuctionNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleAuctionNotFoundException(AuctionNotFoundException ex) {
         return new ResponseEntity<>(new ErrorResponse(
