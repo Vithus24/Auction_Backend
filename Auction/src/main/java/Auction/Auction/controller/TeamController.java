@@ -36,6 +36,12 @@ public class TeamController {
         return ResponseEntity.ok(teamService.getTeamById(id));
     }
 
+    // Get teams by auctionId
+    @GetMapping("/auction/{auctionId}")
+    public ResponseEntity<List<TeamResponse>> getTeamsByAuction(@PathVariable Long auctionId) {
+        return ResponseEntity.ok(teamService.getTeamsByAuctionId(auctionId));
+    }
+
     @PostMapping(consumes = {"multipart/form-data"})
     @PreAuthorize("hasRole('TEAM_OWNER')")
     public ResponseEntity<TeamResponse> createTeam(
@@ -67,7 +73,7 @@ public class TeamController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/{id}/image")
+    @GetMapping("/image/{id}")
     public ResponseEntity<byte[]> getTeamImage(@PathVariable Long id) {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, "image/png")

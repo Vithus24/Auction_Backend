@@ -20,7 +20,7 @@ public class TeamMapper {
                 team.getOwner().getId(),
                 team.getOwner().getEmail(),
                 team.getAuction().getId(),
-                "/teams/" + team.getId() + "/image"
+                "/teams/image/" + team.getId()
         );
     }
 
